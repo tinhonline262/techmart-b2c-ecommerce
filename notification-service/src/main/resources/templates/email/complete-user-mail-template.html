@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:remove="all">Registration Confirmation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .message {
+            margin-bottom: 20px;
+        }
+        .title {
+            color: #fed800;
+            font-weight: bolder;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="title">🎉 Account Created Successfully</h1>
+    <div class="message">
+        <p>Dear <span th:text="${name}"></span>,</p>
+        <p>Welcome to our platform! Your account has been created successfully.</p>
+        <p>Here are your account details:</p>
+        <ul>
+            <li><strong>Name:</strong> <span th:text="${name}"></span></li>
+            <li><strong>Username:</strong> <span th:text="${username}"></span></li>
+            <li><strong>Email:</strong> <span th:text="${email}"></span></li>
+            <li><strong>Created at:</strong> <span th:text="${createdAt}"></span></li>
+        </ul>
+        <p>You can now log in and start exploring.</p>
+        <p>Thank you for joining us!</p>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-google-client-id
+            client-secret: test-google-client-secret
+  mail:
+    username: test-mail@example.com
+    password: test-mail-password
+  flyway:
+    enabled: false
+
+goldenowl:
+  jwt:
+    secret-key: my-super-secure-jwt-secret-key-test
