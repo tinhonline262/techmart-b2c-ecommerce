@@ -14,13 +14,17 @@ import org.springframework.stereotype.Component;
 public class IdentityEventListener {
     private final MailService mailService;
 
-    @KafkaListener(topics = "user-verify", groupId = "notification-group", containerFactory = "verifyUserMailEventListenerFactory")
+    @KafkaListener(topics = "user-verify",
+            groupId = "notification-service-verify-mail-group",
+            containerFactory = "verifyUserMailEventListenerFactory")
     public void handleVerifyEvent(VerifyUserMailEvent event) {
         log.info("Sending verification email to user: {}", event.name());
         mailService.sendVerifyUserMail(event);
         log.info("Verification email sent to: {}", event.email());
     }
-    @KafkaListener(topics = "user-completed", groupId = "notification-group", containerFactory = "completeUserMailEventListenerFactory")
+    @KafkaListener(topics = "user-completed",
+            groupId = "notification-service-completed-user-group",
+            containerFactory = "completeUserMailEventListenerFactory")
     public void handleCompleteEvent(CompleteUserMailEvent event) {
         log.info("Sending completion email to user: {}", event.name());
         mailService.sendCompleteUserMail(event);

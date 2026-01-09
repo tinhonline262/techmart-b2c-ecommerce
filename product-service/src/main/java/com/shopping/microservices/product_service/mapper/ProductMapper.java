@@ -20,7 +20,6 @@ public class ProductMapper {
                 .description(productDTO.description())
                 .sku(productDTO.sku())
                 .price(productDTO.price())
-                .quantityInStock(productDTO.quantityInStock())
                 .brand(productDTO.brand())
                 .category(category)
                 .isActive(productDTO.isActive())
@@ -46,7 +45,6 @@ public class ProductMapper {
                 product.getDescription(),
                 product.getSku(),
                 product.getPrice(),
-                product.getQuantityInStock(),
                 mapCategory(product.getCategory()),
                 product.getBrand(),
                 mapImages(product.getProductImages()),

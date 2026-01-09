@@ -14,7 +14,7 @@ services:
       - "3307:3306"
     volumes:
       - mysql_product_data:/var/lib/mysql
-      - ./product-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      # - ./product-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     networks:
       - microservices-network
     restart: unless-stopped
@@ -35,7 +35,7 @@ services:
       - "3308:3306"
     volumes:
       - mysql_order_data:/var/lib/mysql
-      - ./order-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      # - ./order-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     networks:
       - microservices-network
     healthcheck:
@@ -57,6 +57,48 @@ services:
       MYSQL_DATABASE: identity_service_db
       MYSQL_USER: identity_user
       MYSQL_PASSWORD: identity_password
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  inventory-mysql:
+    image: mysql:latest
+    restart: always
+    container_name: inventory-service-mysql
+    ports:
+      - "3310:3306"
+    volumes:
+      - mysql_inventory_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: inventory_service_db
+      MYSQL_USER: inventory_user
+      MYSQL_PASSWORD: inventory_password
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  payment-mysql:
+    image: mysql:latest
+    restart: always
+    container_name: payment-service-mysql
+    ports:
+      - "3311:3306"
+    volumes:
+      - mysql_payment_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: payment_service_db
+      MYSQL_USER: payment_user
+      MYSQL_PASSWORD: payment_password
     networks:
       - microservices-network
     healthcheck:
@@ -97,6 +139,40 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - microservices-network
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: promtail
+    volumes:
+      - ./docker/promtail/promtail-docker-config.yml:/etc/promtail/docker-config.yml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: "--config.file=/etc/promtail/docker-config.yml"
+    networks:
+      - microservices-network
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: loki
+    command: "-config.file=/etc/loki/local-config.yaml"
+    ports:
+      - "3100:3100"
+    depends_on:
+      - promtail
+    networks:
+      - microservices-network
+
+  tempo:
+    image: grafana/tempo:2.4.1
+    container_name: tempo
+    command: "-config.file /etc/tempo-config.yml"
+    ports:
+      - "3200:3200"     # Tempo
+      - "9411:9411"     # Zipkin
+    volumes:
+      - ./docker/tempo/tempo.yml:/etc/tempo-config.yml
     networks:
       - microservices-network
 
@@ -142,11 +218,15 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
 
+  
+
 
 volumes:
   mysql_product_data:
   mysql_order_data:
   mysql_identity_data:
+  mysql_inventory_data:
+  mysql_payment_data:
   redis_data:
   prometheus_data:
   grafana_data:

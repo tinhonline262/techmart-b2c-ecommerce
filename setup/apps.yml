@@ -1,0 +1,168 @@
+name: "online-shopping-microservices"
+
+services:
+  # ===========================================
+  # Microservices
+  # ===========================================
+
+  # Identity Service
+  identity-service:
+    build:
+      context: ./identity-service
+      dockerfile: Dockerfile
+    image: shopping/identity-service:latest
+    container_name: identity-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://identity-db:3306/identity_service_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=identity_user
+      - SPRING_DATASOURCE_PASSWORD=identity_password
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-cb3f30b0ec715f1bcbead50dc9d77786c038b569f2f6adb9a9e724e07ffd6c17}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - MANAGEMENT_TRACING_ENABLED=${MANAGEMENT_TRACING_ENABLED:-false}
+    ports:
+      - "8080:8080"
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    depends_on:
+      identity-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 700m
+    labels:
+      logging: "promtail"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/actuator/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Order Service
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    image: shopping/order-service:latest
+    container_name: order-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://order-db:3306/order_service_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=order_user
+      - SPRING_DATASOURCE_PASSWORD=order_password
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-cb3f30b0ec715f1bcbead50dc9d77786c038b569f2f6adb9a9e724e07ffd6c17}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - IDENTITY_SERVICE_URL=http://identity-service:8080
+      - MANAGEMENT_TRACING_ENABLED=${MANAGEMENT_TRACING_ENABLED:-false}
+    ports:
+      - "8082:8082"
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    depends_on:
+      order-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 700m
+    labels:
+      logging: "promtail"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8082/actuator/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    image: shopping/notification-service:latest
+    container_name: notification-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_MAIL_HOST=${MAIL_HOST:-sandbox.smtp.mailtrap.io}
+      - SPRING_MAIL_PORT=${MAIL_PORT:-587}
+      - SPRING_MAIL_USERNAME=${MAIL_USERNAME:-e28b0765c43c33}
+      - MAILTRAP_API_KEY=${MAILTRAP_API_KEY}
+      - MANAGEMENT_TRACING_ENABLED=${MANAGEMENT_TRACING_ENABLED:-false}
+    ports:
+      - "8083:8083"
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 700m
+    labels:
+      logging: "promtail"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8083/actuator/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# ===========================================
+# Networks
+# ===========================================
+networks:
+  microservices-network:
+    driver: bridge
+
+# ===========================================
+# Volumes
+# ===========================================
+volumes:
+  order-db-data:
+  identity-db-data:
+  prometheus-data:
+  grafana-data:
+  loki-data:

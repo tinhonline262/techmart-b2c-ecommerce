@@ -3,7 +3,7 @@ package com.shopping.microservices.order_service.controller;
 import com.shopping.microservices.order_service.dto.ApiResponse;
 import com.shopping.microservices.order_service.dto.OrderCreationDTO;
 import com.shopping.microservices.order_service.dto.OrderDTO;
-import com.shopping.microservices.order_service.servive.OrderService;
+import com.shopping.microservices.order_service.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/order")
+@RequestMapping("/api/v1/orders")
 public class OrderController {
 
     private final OrderService orderService;

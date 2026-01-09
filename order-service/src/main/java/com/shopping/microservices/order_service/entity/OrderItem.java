@@ -1,12 +1,7 @@
 package com.shopping.microservices.order_service.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -14,49 +9,40 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@Entity
+@Table(name = "order_items")
 @Getter
 @Setter
-@Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "order_items", schema = "order_service_db")
 public class OrderItem {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @NotNull
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
-    @Size(max = 255)
-    @NotNull
     @Column(name = "product_name", nullable = false)
     private String productName;
 
-    @Size(max = 100)
-    @NotNull
-    @Column(name = "product_sku", nullable = false, length = 100)
-    private String productSku;
+    @Column(name = "product_sku")
+    private String sku;
 
-    @NotNull
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    @NotNull
-    @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
+    @Column(name = "unit_price", nullable = false)
     private BigDecimal unitPrice;
 
-    @NotNull
-    @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
+    @Column(name = "total_price", nullable = false)
     private BigDecimal totalPrice;
 
     @CreatedDate
@@ -66,5 +52,5 @@ public class OrderItem {
     @LastModifiedDate
     @Column(name = "updated_at")
     private Instant updatedAt;
-
 }
+

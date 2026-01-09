@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:remove="all">Order Cancelled</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Nunito', sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fff;
+            border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .title { color: #dc3545; font-weight: bolder; }
+        .message { margin-bottom: 20px; line-height: 1.6; }
+        .highlight { background-color: #f8d7da; padding: 15px; border-radius: 5px; border-left: 4px solid #dc3545; margin: 20px 0; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px; }
+        .cancel-icon { font-size: 48px; text-align: center; margin-bottom: 20px; }
+        .info-box { background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .info-box strong { color: #333; }
+        .reason-box { background-color: #fff3cd; padding: 12px; border-radius: 5px; border-left: 4px solid #ffc107; margin: 15px 0; }
+        .reason-box strong { color: #856404; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="cancel-icon">❌</div>
+    <h1 class="title">Order Cancelled</h1>
+    <div class="message">
+        <p>Dear <span th:text="${name}">Customer</span>,</p>
+        <p>We're writing to inform you that your order has been cancelled.</p>
+
+        <div class="highlight">
+            <h3 style="margin-top: 0; color: #dc3545;">Cancelled Order Details</h3>
+            <div class="info-box">
+                <strong>Order Number:</strong> #<span th:text="${orderNumber}">ORD-12345</span>
+            </div>
+            <div class="info-box">
+                <strong>Total Amount:</strong> $<span th:text="${totalAmount}">299.99</span>
+            </div>
+            <div class="info-box">
+                <strong>Cancelled At:</strong> <span th:text="${cancelledAt}">2026-01-02 10:00:00</span>
+            </div>
+        </div>
+
+        <div th:if="${reason}" class="reason-box">
+            <strong>Cancellation Reason:</strong><br/>
+            <span th:text="${reason}">Payment processing failed</span>
+        </div>
+
+        <p>If this was a mistake or you have any questions about this cancellation, please contact our customer support team immediately.</p>
+
+        <p>We apologize for any inconvenience this may have caused. If you'd like to place a new order, please visit our website.</p>
+    </div>
+
+    <div class="footer">
+        <p>Best regards,<br/>The Shopping Team</p>
+        <p style="font-size: 12px; color: #999;">This is an automated email. Please do not reply to this message.</p>
+    </div>
+</div>
+</body>
+</html>

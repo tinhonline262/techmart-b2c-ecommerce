@@ -1,0 +1,27 @@
+package com.shopping.microservices.inventory_service.event;
+
+import lombok.Builder;
+
+import java.io.Serializable;
+import java.util.List;
+
+/**
+ * Event published when inventory reservation succeeds
+ */
+@Builder
+public record InventoryReservedEvent(
+        Long orderId,
+        String orderNumber,
+        List<ReservedItem> reservedItems,
+        String message
+) implements Serializable {
+
+    @Builder
+    public record ReservedItem(
+            Long productId,
+            String sku,
+            Integer quantity
+    ) implements Serializable {
+    }
+}
+

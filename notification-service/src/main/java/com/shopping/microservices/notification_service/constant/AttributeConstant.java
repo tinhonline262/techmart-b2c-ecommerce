@@ -14,4 +14,8 @@ public class AttributeConstant {
     public static final String VERIFY_TOKEN_ATTRIBUTE = "verifyToken";
     public static final String EXPIRED_DATE_ATTRIBUTE = "expiredDate";
     public static final String CREATED_AT_ATTRIBUTE = "createdAt";
+    public static final String COMPLETED_AT_ATTRIBUTE = "completedAt";
+    public static final String CANCELLED_AT_ATTRIBUTE = "cancelledAt";
+    public static final String REASON_ATTRIBUTE = "reason";
+    public static final String MESSAGE_ATTRIBUTE = "message";
 }

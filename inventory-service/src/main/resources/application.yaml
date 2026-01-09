@@ -1,0 +1,102 @@
+# Server Configuration
+server:
+  port: 8087
+
+spring:
+  application:
+    name: inventory-service
+  web:
+    resources:
+      add-mappings: false
+
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: inventory-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+  # MySQL Database Configuration
+  datasource:
+    url: jdbc:mysql://localhost:3310/inventory_service_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: inventory_user
+    password: inventory_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # JPA/Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # Initialize schema
+  sql:
+    init:
+      mode: never
+      schema-locations: classpath:schema.sql
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+# Actuator Configuration (for Prometheus)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,caches
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      sla:
+        http.server.requests: 10ms,50ms,100ms,200ms,500ms,1s
+    tags:
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+# Logging
+logging:
+  level:
+    org:
+      springframework:
+        web: INFO
+        cache: TRACE
+      hibernate:
+        SQL: OFF
+      flywaydb: DEBUG
+    com:
+      shopping:
+        microservices: DEBUG
+      github:
+        benmanes:
+          caffeine: TRACE
+
+
+identity:
+  jwt:
+    secret-key: ${JWT_SECRET_KEY:cb3f30b0ec715f1bcbead50dc9d77786c038b569f2f6adb9a9e724e07ffd6c17}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka

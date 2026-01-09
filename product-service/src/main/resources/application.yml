@@ -112,6 +112,9 @@ app:
   warming:
     enabled: true
     top-products-limit: 100
+identity:
+  jwt:
+    secret-key: ${JWT_SECRET_KEY:cb3f30b0ec715f1bcbead50dc9d77786c038b569f2f6adb9a9e724e07ffd6c17}
 
 eureka:
   client:

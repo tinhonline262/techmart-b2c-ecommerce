@@ -81,7 +81,6 @@ public class ProductServiceImpl implements ProductService {
         log.info("Reversing product by SKU: {}", productDTO.sku());
         var product = productRepository.findBySku(productDTO.sku())
                 .orElseThrow(() -> new ProductNotFoundException("Product not found with SKU: " + productDTO.sku()));
-        product.setQuantityInStock(product.getQuantityInStock() - productDTO.quantity());
         productRepository.save(product);
         log.info("Product stock reversed for SKU: {}", productDTO.sku());
         return null;

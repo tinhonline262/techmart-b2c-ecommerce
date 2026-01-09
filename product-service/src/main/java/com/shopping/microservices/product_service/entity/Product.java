@@ -45,10 +45,6 @@ public class Product implements Serializable {
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    @Builder.Default
-    @Column(name = "quantity_in_stock")
-    private Integer quantityInStock = 0;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "category_id")

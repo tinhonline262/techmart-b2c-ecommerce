@@ -1,0 +1,73 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: notification-service
+
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:29092}
+    consumer:
+      group-id: notification-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.shopping.microservices.notification_service.event
+
+  # Email Configuration
+  mail:
+    host: ${SPRING_MAIL_HOST:sandbox.smtp.mailtrap.io}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:e28b0765c43c33}
+    password: ${MAILTRAP_API_KEY}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: true
+
+# Actuator Configuration (for Prometheus)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      sla:
+        http.server.requests: 10ms,50ms,100ms,200ms,500ms,1s
+    tags:
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  tracing:
+    enabled: ${MANAGEMENT_TRACING_ENABLED:false}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka-server:8761/eureka}
+  instance:
+    prefer-ip-address: true
+    hostname: notification-service
+
+# Logging configuration for Docker
+logging:
+  level:
+    root: INFO
+    com.shopping.microservices: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+

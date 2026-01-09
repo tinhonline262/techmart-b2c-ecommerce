@@ -1,12 +1,12 @@
 package com.shopping.microservices.notification_service.service.impl;
 
 import com.shopping.microservices.notification_service.constant.AttributeConstant;
-import com.shopping.microservices.notification_service.event.CompleteUserMailEvent;
-import com.shopping.microservices.notification_service.event.OrderSendNotificationEvent;
-import com.shopping.microservices.notification_service.event.VerifyUserMailEvent;
+import com.shopping.microservices.notification_service.event.*;
 import com.shopping.microservices.notification_service.service.MailService;
 import com.shopping.microservices.notification_service.template.AbstractMailHandler;
 import com.shopping.microservices.notification_service.template.CompleteUserMailHandler;
+import com.shopping.microservices.notification_service.template.OrderCancelledMailHandler;
+import com.shopping.microservices.notification_service.template.OrderCompletedMailHandler;
 import com.shopping.microservices.notification_service.template.OrderPlacedMailHandler;
 import com.shopping.microservices.notification_service.template.VerifyUserMailHandler;
 import jakarta.mail.MessagingException;
@@ -73,6 +73,38 @@ class MailServiceImpl implements MailService {
 
         AbstractMailHandler mailHandler = new OrderPlacedMailHandler(
                 mailSender, templateEngine, variables, senderMail, mailDTO.customerEmail()
+        );
+        sendMail(mailHandler);
+    }
+
+    @Override
+    public void sendOrderCompletedMail(OrderCompletedEvent event) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put(AttributeConstant.NAME_ATTRIBUTE, event.customerName());
+        variables.put(AttributeConstant.EMAIL_ATTRIBUTE, event.customerEmail());
+        variables.put(AttributeConstant.ORDER_NUMBER_ATTRIBUTE, event.orderNumber());
+        variables.put(AttributeConstant.TOTAL_AMOUNT_ATTRIBUTE, event.totalAmount());
+        variables.put(AttributeConstant.COMPLETED_AT_ATTRIBUTE, event.completedAt());
+        variables.put(AttributeConstant.MESSAGE_ATTRIBUTE, event.message());
+
+        AbstractMailHandler mailHandler = new OrderCompletedMailHandler(
+                mailSender, templateEngine, variables, senderMail, event.customerEmail()
+        );
+        sendMail(mailHandler);
+    }
+
+    @Override
+    public void sendOrderCancelledMail(OrderCancelledEvent event) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put(AttributeConstant.NAME_ATTRIBUTE, event.customerName());
+        variables.put(AttributeConstant.EMAIL_ATTRIBUTE, event.customerEmail());
+        variables.put(AttributeConstant.ORDER_NUMBER_ATTRIBUTE, event.orderNumber());
+        variables.put(AttributeConstant.TOTAL_AMOUNT_ATTRIBUTE, event.totalAmount());
+        variables.put(AttributeConstant.CANCELLED_AT_ATTRIBUTE, event.cancelledAt());
+        variables.put(AttributeConstant.REASON_ATTRIBUTE, event.reason());
+
+        AbstractMailHandler mailHandler = new OrderCancelledMailHandler(
+                mailSender, templateEngine, variables, senderMail, event.customerEmail()
         );
         sendMail(mailHandler);
     }

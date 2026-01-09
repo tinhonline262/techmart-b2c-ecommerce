@@ -8,6 +8,7 @@ import com.shopping.microservices.order_service.dto.product.ProductDTO;
 import com.shopping.microservices.order_service.entity.Order;
 import com.shopping.microservices.order_service.entity.OrderItem;
 import com.shopping.microservices.order_service.entity.OrderStatusHistory;
+import com.shopping.microservices.order_service.enumeration.OrderStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -22,7 +23,8 @@ public class OrderMapper {
                 .customerId(orderCreationDTO.customerId())
                 .customerName(orderCreationDTO.customerName())
                 .customerEmail(orderCreationDTO.customerEmail())
-                .orderItems(new HashSet<>(orderItems))
+                .orderItems(orderItems)
+                .status(OrderStatus.PENDING.name())
                 .totalAmount(orderItems.stream()
                         .map(OrderItem::getTotalPrice)
                         .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add) )
@@ -51,7 +53,7 @@ public class OrderMapper {
 
     private OrderItemDTO mapOrderItemToDTO(OrderItem orderItem) {
         return new OrderItemDTO(
-                orderItem.getProductSku(),
+                orderItem.getSku(),
                 orderItem.getQuantity()
         );
     }
@@ -60,7 +62,7 @@ public class OrderMapper {
         return OrderItem.builder()
                 .productId(product.id())
                 .productName(product.name())
-                .productSku(product.sku())
+                .sku(orderItemDTO.sku())
                 .quantity(orderItemDTO.quantity())
                 .unitPrice(product.price())
                 .totalPrice(product.price().multiply(java.math.BigDecimal.valueOf(orderItemDTO.quantity())))

@@ -13,7 +13,6 @@ import java.util.List;
 public record ProductCreationDTO(@NotNull(message = "Name not blank") String name, String description,
                                  @NotNull(message = "SKU not null") String sku,
                                  @NotNull @PositiveOrZero(message = "Price must be positive or zero") BigDecimal price,
-                                 @NotNull @PositiveOrZero(message = "Quantity in stock must be positive or zero") Integer quantityInStock,
                                  @NotNull(message = "CategoryID not blank") @Positive(message = "CategoryID must be higher than zero") Long categoryId,
                                  String brand, List<ProductImageCreationDTO> productImages,
                                  @NotNull(message = "isActive not null") Boolean isActive) implements Serializable {

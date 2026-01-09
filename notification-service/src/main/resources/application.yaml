@@ -15,9 +15,9 @@ spring:
 
   # Email Configuration
   mail:
-    host: live.smtp.mailtrap.io
+    host: sandbox.smtp.mailtrap.io
     port: 587
-    username: api
+    username: e28b0765c43c33
     password: ${MAILTRAP_API_KEY}
     properties:
       mail:
@@ -25,7 +25,30 @@ spring:
           auth: false
           starttls:
             enable: true
-
+# Actuator Configuration (for Prometheus)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,caches
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      sla:
+        http.server.requests: 10ms,50ms,100ms,200ms,500ms,1s
+    tags:
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 eureka:
   client:
     service-url:
