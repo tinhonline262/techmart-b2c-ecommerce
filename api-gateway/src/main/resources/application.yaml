@@ -10,25 +10,71 @@ spring:
             - id: product-service
               uri: lb://product-service
               predicates:
-                - Path=/api/v1/product/**
+                - Path=/api/v1/products/**
+              filters:
+                - AuthenticationFilter
+
             - id: order-service
               uri: lb://order-service
               predicates:
-                - Path=/api/v1/order/**
+                - Path=/api/v1/orders/**
+              filters:
+                - AuthenticationFilter
+
             - id: notification-service
               uri: lb://notification-service
               predicates:
                 - Path=/api/v1/notification/**
+
             - id: identity-service-auth
               uri: lb://identity-service
               predicates:
                 - Path=/api/v1/auth/**
+
             - id: identity-service-user
               uri: lb://identity-service
               predicates:
                   - Path=/api/v1/user/**
+              filters:
+                - AuthenticationFilter
+            - id: inventory-service
+              uri: lb://inventory-service
+              predicates:
+                - Path=/api/v1/inventory/**
 
+            - id: payment-service
+              uri: lb://payment-service
+              predicates:
+                - Path=/api/v1/payments/**
+
+# Actuator Configuration (for Prometheus)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,caches
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      sla:
+        http.server.requests: 10ms,50ms,100ms,200ms,500ms,1s
+    tags:
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka
+identity:
+  jwt:
+    secret-key: ${JWT_SECRET_KEY:cb3f30b0ec715f1bcbead50dc9d77786c038b569f2f6adb9a9e724e07ffd6c17}
