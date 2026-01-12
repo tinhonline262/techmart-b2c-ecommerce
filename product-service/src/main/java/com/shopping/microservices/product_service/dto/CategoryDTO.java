@@ -1,14 +1,30 @@
 package com.shopping.microservices.product_service.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.shopping.microservices.product_service.entity.Category;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * DTO for {@link Category}
+ * DTO for Category response
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record CategoryDTO(Long id, String name, String description) implements Serializable {
+public record CategoryDTO(
+        Long id,
+        String name,
+        String slug,
+        String description,
+        String imageUrl,
+        Long parentId,
+        String parentName,
+        List<CategoryDTO> children,
+        Integer displayOrder,
+        boolean isPublished,
+        String metaTitle,
+        String metaDescription,
+        String metaKeywords,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
+) implements Serializable {
 }

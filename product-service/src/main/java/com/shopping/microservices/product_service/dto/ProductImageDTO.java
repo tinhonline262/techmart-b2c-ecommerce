@@ -1,15 +1,22 @@
 package com.shopping.microservices.product_service.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.shopping.microservices.product_service.entity.ProductImage;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 /**
- * DTO for {@link ProductImage}
+ * DTO for ProductImage response
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record ProductImageDTO(Long id, String imageUrl, Boolean isPrimary, Integer displayOrder,
-                              Instant createdAt) implements Serializable {
+public record ProductImageDTO(
+        Long id,
+        Long productId,
+        String imageUrl,
+        String altText,
+        boolean isPrimary,
+        Integer displayOrder,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
+) implements Serializable {
 }

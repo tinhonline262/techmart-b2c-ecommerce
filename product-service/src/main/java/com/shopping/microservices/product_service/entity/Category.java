@@ -1,50 +1,58 @@
 package com.shopping.microservices.product_service.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.ColumnDefault;
 
-import java.io.Serial;
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@EntityListeners(AuditingEntityListener.class)
-@Table(name = "categories")
-public class Category implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 1L;
-
+@Table(name = "category", schema = "product_service_db")
+public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "name", nullable = false, length = 100)
+    @Size(max = 255)
+    @NotNull
+    @Column(name = "name", nullable = false)
     private String name;
+
+    @Size(max = 255)
+    @Column(name = "slug")
+    private String slug;
 
     @Lob
     @Column(name = "description")
     private String description;
 
-    @CreatedDate
-    @Column(name = "created_at")
-    private Instant createdAt;
+    @ColumnDefault("0")
+    @Column(name = "display_order")
+    private Integer displayOrder;
 
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private Instant updatedAt;
+    @Size(max = 255)
+    @Column(name = "meta_keyword")
+    private String metaKeyword;
 
-    @Builder.Default
-    @OneToMany(mappedBy = "category")
-    private Set<Product> products = new LinkedHashSet<>();
+    @Lob
+    @Column(name = "meta_description")
+    private String metaDescription;
+
+    @ColumnDefault("0")
+    @Column(name = "is_published")
+    private Boolean isPublished;
+
+    @Column(name = "image_id")
+    private Long imageId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private Category parent;
+
 }

@@ -1,56 +1,80 @@
 package com.shopping.microservices.order_service.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Map;
 
-@Entity
-@Table(name = "order_items")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@EntityListeners(AuditingEntityListener.class)
+@Entity
+@Table(name = "order_item", schema = "order_service_db")
 public class OrderItem {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
-    private Order order;
-
-    @Column(name = "product_id", nullable = false)
+    @Column(name = "product_id")
     private Long productId;
 
-    @Column(name = "product_name", nullable = false)
-    private String productName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "order_id")
+    private Order order;
 
-    @Column(name = "product_sku")
-    private String sku;
+    @Size(max = 255)
+    @Column(name = "name")
+    private String name;
 
-    @Column(name = "quantity", nullable = false)
+    @Column(name = "quantity")
     private Integer quantity;
 
-    @Column(name = "unit_price", nullable = false)
-    private BigDecimal unitPrice;
+    @Column(name = "price", precision = 19, scale = 2)
+    private BigDecimal price;
 
-    @Column(name = "total_price", nullable = false)
-    private BigDecimal totalPrice;
+    @Lob
+    @Column(name = "description")
+    private String description;
 
-    @CreatedDate
+    @Column(name = "discount_amount", precision = 19, scale = 2)
+    private BigDecimal discountAmount;
+
+    @Column(name = "tax_amount", precision = 19, scale = 2)
+    private BigDecimal taxAmount;
+
+    @Column(name = "tax_percent", precision = 5, scale = 2)
+    private BigDecimal taxPercent;
+
+    @Column(name = "shipment_fee", precision = 19, scale = 2)
+    private BigDecimal shipmentFee;
+
+    @Size(max = 50)
+    @Column(name = "status", length = 50)
+    private String status;
+
+    @Column(name = "shipment_tax", precision = 19, scale = 2)
+    private BigDecimal shipmentTax;
+
+    @Column(name = "processing_state")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> processingState;
+
+    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
     private Instant createdAt;
 
-    @LastModifiedDate
+    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at")
     private Instant updatedAt;
-}
 
+}

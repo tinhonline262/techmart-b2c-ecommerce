@@ -1,12 +1,11 @@
 package com.shopping.microservices.product_service.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import java.time.Instant;
 
 @Getter
 @Setter
@@ -14,32 +13,29 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@EntityListeners(AuditingEntityListener.class)
-@Table(name = "product_images")
+@Table(name = "product_image", schema = "product_service_db")
 public class ProductImage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "product_id")
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @Column(name = "image_url", nullable = false, length = 500)
-    private String imageUrl;
+    @NotNull
+    @Column(name = "image_id", nullable = false)
+    private Long imageId;
 
-    @Builder.Default
-    @Column(name = "is_primary")
-    private Boolean isPrimary = false;
-
-    @Builder.Default
+    @ColumnDefault("0")
     @Column(name = "display_order")
-    private Integer displayOrder = 0;
+    private Integer displayOrder;
 
-    @CreatedDate
-    @Column(name = "created_at")
-    private Instant createdAt;
+    @ColumnDefault("0")
+    @Column(name = "is_primary")
+    private Boolean isPrimary;
 
 }

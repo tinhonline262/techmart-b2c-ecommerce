@@ -47,6 +47,16 @@ spring:
               predicates:
                 - Path=/api/v1/payments/**
 
+            - id: cart-service
+              uri: lb://cart-service
+              predicates:
+                - Path=/api/v1/carts/**
+
+            - id: customer-service
+              uri: lb://customer-service
+              predicates:
+                - Path=/api/v1/customers/**
+
 # Actuator Configuration (for Prometheus)
 management:
   endpoints:

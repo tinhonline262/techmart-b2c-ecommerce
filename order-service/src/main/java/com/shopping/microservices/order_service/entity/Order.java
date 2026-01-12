@@ -1,66 +1,110 @@
 package com.shopping.microservices.order_service.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
-@Entity
-@Table(name = "orders")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@EntityListeners(AuditingEntityListener.class)
+@Entity
+@Table(name = "`order`", schema = "order_service_db")
 public class Order {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "order_number", unique = true, nullable = false)
-    private String orderNumber;
+    @Size(max = 255)
+    @Column(name = "email")
+    private String email;
 
-    @Column(name = "customer_id", nullable = false)
-    private Long customerId;
+    @Lob
+    @Column(name = "note")
+    private String note;
 
-    @Column(name = "customer_name", nullable = false)
-    private String customerName;
+    @Column(name = "total_tax")
+    private Float totalTax;
 
-    @Column(name = "customer_email", nullable = false)
-    private String customerEmail;
+    @Column(name = "total_discount_amount")
+    private Float totalDiscountAmount;
 
-    @Column(name = "order_date")
-    private Instant orderDate;
+    @Column(name = "number_item")
+    private Integer numberItem;
 
-    @Column(name = "status", nullable = false)
-    private String status = "PENDING";
+    @Size(max = 100)
+    @Column(name = "promotion_code", length = 100)
+    private String promotionCode;
 
-    @Column(name = "total_amount", nullable = false)
+    @Column(name = "total_amount", precision = 19, scale = 2)
     private BigDecimal totalAmount;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<OrderItem> orderItems = new ArrayList<>();
+    @Column(name = "total_shipment_fee", precision = 19, scale = 2)
+    private BigDecimal totalShipmentFee;
 
-    @CreatedDate
+    @Size(max = 50)
+    @Column(name = "status", length = 50)
+    private String status;
+
+    @Size(max = 50)
+    @Column(name = "shipment_method_id", length = 50)
+    private String shipmentMethodId;
+
+    @Size(max = 50)
+    @Column(name = "shipment_status", length = 50)
+    private String shipmentStatus;
+
+    @Size(max = 50)
+    @Column(name = "payment_status", length = 50)
+    private String paymentStatus;
+
+    @Column(name = "payment_id")
+    private Long paymentId;
+
+    @Size(max = 50)
+    @Column(name = "checkout_id", length = 50)
+    private String checkoutId;
+
+    @Size(max = 255)
+    @Column(name = "reject_reason")
+    private String rejectReason;
+
+    @Size(max = 50)
+    @Column(name = "payment_method_id", length = 50)
+    private String paymentMethodId;
+
+    @Size(max = 50)
+    @Column(name = "progress", length = 50)
+    private String progress;
+
+    @Size(max = 50)
+    @Column(name = "customer_id", length = 50)
+    private String customerId;
+
+    @Column(name = "last_error")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> lastError;
+
+    @Column(name = "attributes")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> attributes;
+
+    @Column(name = "total_shipment_tax", precision = 19, scale = 2)
+    private BigDecimal totalShipmentTax;
+
+    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
     private Instant createdAt;
 
-    @LastModifiedDate
+    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    public void addOrderItem(OrderItem item) {
-        orderItems.add(item);
-        item.setOrder(this);
-    }
 }
-

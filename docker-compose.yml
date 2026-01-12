@@ -107,7 +107,68 @@ services:
       timeout: 5s
       retries: 5
 
+  cart-mysql:
+    image: mysql:latest
+    restart: always
+    container_name: cart-service-mysql
+    ports:
+      - "3312:3306"
+    volumes:
+      - mysql_cart_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: cart_service_db
+      MYSQL_USER: cart_user
+      MYSQL_PASSWORD: cart_password
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  customer-mysql:
+    image: mysql:latest
+    restart: always
+    container_name: customer-service-mysql
+    ports:
+      - "3313:3306"
+    volumes:
+      - mysql_customer_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: customer_service_db
+      MYSQL_USER: customer_user
+      MYSQL_PASSWORD: customer_password
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  location-mysql:
+    image: mysql:latest
+    restart: always
+    container_name: location-service-mysql
+    ports:
+      - "3314:3306"
+    volumes:
+      - mysql_location_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: location_service_db
+      MYSQL_USER: location_user
+      MYSQL_PASSWORD: location_password
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   # Redis Cache
   redis:
     image: redis:latest
@@ -218,18 +279,19 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
 
-  
-
-
 volumes:
   mysql_product_data:
   mysql_order_data:
   mysql_identity_data:
   mysql_inventory_data:
   mysql_payment_data:
+  mysql_customer_data:
+  mysql_cart_data:
+  mysql_location_data:
   redis_data:
   prometheus_data:
   grafana_data:
+
 
 networks:
   microservices-network:
