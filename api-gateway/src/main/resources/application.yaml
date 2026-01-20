@@ -54,7 +54,7 @@ spring:
             - id: cart-service
               uri: lb://cart-service
               predicates:
-                - Path=/api/v1/carts/**
+                - Path=/api/v1/public/carts/**
 
             - id: customer-service
               uri: lb://customer-service
