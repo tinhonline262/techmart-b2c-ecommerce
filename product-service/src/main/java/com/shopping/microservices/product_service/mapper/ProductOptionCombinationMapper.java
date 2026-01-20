@@ -25,7 +25,7 @@ public class ProductOptionCombinationMapper {
         return new ProductOptionCombinationDTO(
                 combination.getId(),
                 combination.getProduct() != null ? combination.getProduct().getId() : null,
-                combination.getSku(),
+                null,
                 null, // price
                 null, // stockQuantity
                 null, // thumbnailUrl
@@ -43,7 +43,7 @@ public class ProductOptionCombinationMapper {
 
         return new ProductVariationDTO(
                 combination.getId(),
-                combination.getSku(),
+                null,
                 null, // price
                 null, // oldPrice
                 null, // stockQuantity

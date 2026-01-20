@@ -171,7 +171,30 @@ public class RedisConfig {
         cacheConfigurations.put("priceRange",
                 defaultConfig.entryTtl(Duration.ofMinutes(3)));
 
+        cacheConfigurations.put("brands",
+                defaultConfig.entryTtl(Duration.ofHours(1)));
 
+        cacheConfigurations.put("brandById",
+                defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("brandBySlug",
+                defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigurations.put("publishedBrands",
+                defaultConfig.entryTtl(Duration.ofMinutes(10)));
+
+        cacheConfigurations.put("categories_page",
+                defaultConfig.entryTtl(Duration.ofHours(2)));
+
+        cacheConfigurations.put("category_by_id",
+                defaultConfig.entryTtl(Duration.ofMinutes(30)));
+
+        cacheConfigurations.put("published_categories",
+                defaultConfig.entryTtl(Duration.ofHours(2)));
+
+        cacheConfigurations.put("category_by_slug",
+                defaultConfig.entryTtl(Duration.ofHours(2)));
+
+        cacheConfigurations.put("category_suggestions",
+                defaultConfig.entryTtl(Duration.ofHours(2)));
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)

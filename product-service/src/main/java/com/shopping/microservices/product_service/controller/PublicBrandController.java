@@ -1,8 +1,9 @@
 package com.shopping.microservices.product_service.controller;
 
 import com.shopping.microservices.product_service.dto.*;
-import com.shopping.microservices.product_service.repository.BrandRepository;
-import com.shopping.microservices.product_service.repository.ProductRepository;
+import com.shopping.microservices.product_service.dto.brand.BrandDTO;
+import com.shopping.microservices.product_service.dto.brand.BrandDetailDTO;
+import com.shopping.microservices.product_service.service.BrandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -22,8 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PublicBrandController {
 
-    private final BrandRepository brandRepository;
-    private final ProductRepository productRepository;
+    private final BrandService brandService;
 
     /**
      * Get all published brands.
@@ -33,7 +33,8 @@ public class PublicBrandController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<BrandDTO>>> getBrands() {
-        return ResponseEntity.ok(ApiResponse.success(null, "Brands retrieved successfully"));
+        List<BrandDTO> brands = brandService.getAllPublishedBrands();
+        return ResponseEntity.ok(ApiResponse.success(brands, "Brands retrieved successfully"));
     }
 
     /**
@@ -44,7 +45,8 @@ public class PublicBrandController {
     @GetMapping("/{brandSlug}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<BrandDetailDTO>> getBrandBySlug(@PathVariable String brandSlug) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Brand retrieved by slug successfully"));
+        BrandDetailDTO brand = brandService.getBrandBySlug(brandSlug);
+        return ResponseEntity.ok(ApiResponse.success(brand, "Brand retrieved by slug successfully"));
     }
 
     /**

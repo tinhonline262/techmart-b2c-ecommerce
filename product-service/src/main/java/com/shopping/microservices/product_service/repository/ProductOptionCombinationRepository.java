@@ -13,9 +13,6 @@ public interface ProductOptionCombinationRepository extends JpaRepository<Produc
 
     List<ProductOptionCombination> findByProductId(Long productId);
 
-    Optional<ProductOptionCombination> findBySku(String sku);
 
     void deleteByProductId(Long productId);
-
-    boolean existsBySku(String sku);
 }

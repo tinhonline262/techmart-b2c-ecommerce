@@ -50,7 +50,9 @@ public class CaffeineConfig {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager(
                 "productById",   // Cache product by ID
                 "categories",    // Category cache (very stable)
-                "topProducts"    // Top products (hot data)
+                "topProducts"  // Top products (hot data),
+
+//                "brands", "brandById", "brandBySlug", "publishedBrands"
         );
 
 
@@ -80,7 +82,11 @@ public class CaffeineConfig {
      */
     @Bean(name = "longTermCaffeineCache")
     public CacheManager longTermCaffeineCacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager("longTermCache");
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager("longTermCache",
+                "publishedBrands", "categories_page",
+                "published_categories", "category_by_slug", "category_suggestions");
+
+
 
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .maximumSize(1_000)
@@ -96,7 +102,8 @@ public class CaffeineConfig {
      */
     @Bean(name = "shortTermCaffeineCache")
     public CacheManager shortTermCaffeineCacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager("searchCache");
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager("searchCache",
+                "brandBySlug");
 
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .maximumSize(5_000)

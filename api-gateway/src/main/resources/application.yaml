@@ -10,7 +10,11 @@ spring:
             - id: product-service
               uri: lb://product-service
               predicates:
-                - Path=/api/v1/products/**
+                - Path=/api/v1/products/**,
+                  /api/v1/categories/**,
+                  /api/v1/brands/**,
+                  /api/v1/public/brands/**,
+                  /api/v1/public/categories/**
               filters:
                 - AuthenticationFilter
 

@@ -1,4 +1,4 @@
-package com.shopping.microservices.product_service.dto;
+package com.shopping.microservices.product_service.dto.category;
 
 import jakarta.validation.constraints.Size;
 

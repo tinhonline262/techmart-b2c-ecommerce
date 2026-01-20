@@ -1,15 +1,16 @@
 package com.shopping.microservices.product_service.controller;
 
 import com.shopping.microservices.product_service.dto.*;
-import com.shopping.microservices.product_service.repository.BrandRepository;
+import com.shopping.microservices.product_service.dto.brand.BrandCreationDTO;
+import com.shopping.microservices.product_service.dto.brand.BrandDTO;
+import com.shopping.microservices.product_service.dto.brand.BrandUpdateDTO;
+import com.shopping.microservices.product_service.service.BrandService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * Admin Brand Controller
@@ -21,7 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminBrandController {
 
-    private final BrandRepository brandRepository;
+    private final BrandService brandService;
 
     /**
      * Get all brands with optional pagination.
@@ -34,11 +35,10 @@ public class AdminBrandController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<PageResponseDTO<BrandDTO>>> getBrands(
-            @RequestParam(required = false) List<Long> ids,
-            @RequestParam(required = false) Boolean isPublished,
             @RequestParam(required = false) String keyword,
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Brands retrieved successfully"));
+        PageResponseDTO<BrandDTO> brands = brandService.getAllBrands(keyword, pageable);
+        return ResponseEntity.ok(ApiResponse.success(brands, "Brands retrieved successfully"));
     }
 
     /**
@@ -49,7 +49,8 @@ public class AdminBrandController {
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<BrandDTO>> getBrandById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Brand retrieved successfully"));
+        BrandDTO brand = brandService.getBrandById(id);
+        return ResponseEntity.ok(ApiResponse.success(brand, "Brand retrieved successfully"));
     }
 
     /**
@@ -61,8 +62,9 @@ public class AdminBrandController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ApiResponse<BrandDTO>> createBrand(
             @Valid @RequestBody BrandCreationDTO brandCreationDTO) {
+        BrandDTO brand = brandService.createBrand(brandCreationDTO);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(null, "Brand created successfully"));
+                .body(ApiResponse.success(brand, "Brand created successfully"));
     }
 
     /**
@@ -75,7 +77,8 @@ public class AdminBrandController {
     public ResponseEntity<ApiResponse<BrandDTO>> updateBrand(
             @PathVariable Long id,
             @Valid @RequestBody BrandUpdateDTO brandUpdateDTO) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Brand updated successfully"));
+        BrandDTO brand = brandService.updateBrand(id, brandUpdateDTO);
+        return ResponseEntity.ok(ApiResponse.success(brand, "Brand updated successfully"));
     }
 
     /**
@@ -86,6 +89,7 @@ public class AdminBrandController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<ApiResponse<Void>> deleteBrand(@PathVariable Long id) {
+        brandService.deleteBrand(id);
         return ResponseEntity.noContent().build();
     }
 }
