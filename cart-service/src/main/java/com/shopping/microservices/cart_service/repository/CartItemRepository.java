@@ -36,4 +36,6 @@ public interface CartItemRepository extends JpaRepository<CartItem, CartItemId> 
      * @param productIds list of product IDs
      */
     void deleteByIdCustomerIdAndIdProductIdIn(String customerId, List<Long> productIds);
+
+    boolean existsByIdCustomerIdAndIdProductId(String customerId, Long productId);
 }
