@@ -2,6 +2,11 @@ package com.shopping.microservices.product_service.mapper;
 
 import com.shopping.microservices.product_service.dto.*;
 import com.shopping.microservices.product_service.entity.*;
+import com.shopping.microservices.product_service.repository.ProductCategoryRepository;
+import com.shopping.microservices.product_service.repository.ProductImageRepository;
+import com.shopping.microservices.product_service.repository.ProductOptionRepository;
+import com.shopping.microservices.product_service.repository.ProductOptionValueRepository;
+import com.shopping.microservices.product_service.repository.ProductOptionCombinationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +25,13 @@ public class ProductMapper {
     private final BrandMapper brandMapper;
     private final CategoryMapper categoryMapper;
     private final ProductImageMapper productImageMapper;
+    private final ProductCategoryRepository productCategoryRepository;
+    private final ProductImageRepository productImageRepository;
+    private final ProductOptionRepository productOptionRepository;
+    private final ProductOptionValueRepository productOptionValueRepository;
+    private final ProductOptionCombinationRepository productOptionCombinationRepository;
+    private final ProductOptionValueMapper productOptionValueMapper;
+    private final ProductOptionCombinationMapper productOptionCombinationMapper;
 
     /**
      * Map ProductCreationDTO to Product entity
@@ -85,6 +97,16 @@ public class ProductMapper {
     public ProductDTO toDTO(Product product) {
         if (product == null) return null;
 
+        // load categories associated with the product
+        var categories = productCategoryRepository.findByProductId(product.getId()).stream()
+                .map(pc -> categoryMapper.toDTO(pc.getCategory()))
+                .collect(Collectors.toList());
+
+        // load images associated with the product
+        var images = productImageRepository.findByProductId(product.getId()).stream()
+                .map(productImageMapper::toDTO)
+                .collect(Collectors.toList());
+
         return new ProductDTO(
                 product.getId(),
                 product.getName(),
@@ -104,8 +126,8 @@ public class ProductMapper {
                 Boolean.TRUE.equals(product.getIsFeatured()),
                 Boolean.TRUE.equals(product.getIsVisibleIndividually()),
                 null, // brand - to be loaded separately
-                Collections.emptyList(), // categories - to be loaded separately
-                Collections.emptyList(), // images - to be loaded separately
+                categories,
+                images,
                 product.getMetaTitle(),
                 product.getMetaDescription(),
                 product.getMetaKeyword(),
@@ -148,6 +170,68 @@ public class ProductMapper {
     public ProductDetailDTO toDetailDTO(Product product) {
         if (product == null) return null;
 
+        Long productId = product.getId();
+
+        // categories
+        var categories = productCategoryRepository.findByProductId(productId).stream()
+                .map(pc -> categoryMapper.toDTO(pc.getCategory()))
+                .collect(Collectors.toList());
+
+        // images
+        var images = productImageRepository.findByProductId(productId).stream()
+                .map(productImageMapper::toDTO)
+                .collect(Collectors.toList());
+
+        // options with values
+        var options = productOptionRepository.findByProductId(productId);
+        var optionDTOs = options.stream().map(opt -> {
+            var values = productOptionValueRepository.findByProductOptionId(opt.getId());
+            var valueDTOs = productOptionValueMapper.toDTOList(values);
+            return new com.shopping.microservices.product_service.dto.ProductOptionDTO(
+                    opt.getId(),
+                    opt.getName(),
+                    valueDTOs,
+                    null,
+                    null
+            );
+        }).collect(Collectors.toList());
+
+        // build a lookup for option values by (optionName,value)
+        var allOptionValues = productOptionValueRepository.findByProductOptionProductId(productId);
+        var optionValueLookup = allOptionValues.stream()
+                .map(productOptionValueMapper::toDTO)
+                .collect(Collectors.toMap(v -> v.optionName() + "::" + v.value(), v -> v));
+
+        // combinations with option values
+        var combinations = productOptionCombinationRepository.findByProductId(productId);
+        var combinationDTOs = combinations.stream().map(c -> {
+            List<com.shopping.microservices.product_service.dto.ProductOptionValueDTO> combValues = new ArrayList<>();
+            if (c.getValue() != null && !c.getValue().isBlank()) {
+                var parts = c.getValue().split(";");
+                for (String part : parts) {
+                    var kv = part.split("=", 2);
+                    if (kv.length == 2) {
+                        var optName = kv[0].trim();
+                        var val = kv[1].trim();
+                        var key = optName + "::" + val;
+                        var v = optionValueLookup.get(key);
+                        if (v != null) combValues.add(v);
+                    }
+                }
+            }
+            return new com.shopping.microservices.product_service.dto.ProductOptionCombinationDTO(
+                    c.getId(),
+                    c.getProduct() != null ? c.getProduct().getId() : null,
+                    c.getSku(),
+                    null,
+                    null,
+                    null,
+                    combValues,
+                    null,
+                    null
+            );
+        }).collect(Collectors.toList());
+
         return new ProductDetailDTO(
                 product.getId(),
                 product.getName(),
@@ -164,10 +248,10 @@ public class ProductMapper {
                 Boolean.TRUE.equals(product.getIsPublished()),
                 Boolean.TRUE.equals(product.getIsFeatured()),
                 null, // brand
-                Collections.emptyList(), // categories
-                Collections.emptyList(), // images
-                Collections.emptyList(), // options
-                Collections.emptyList(), // attributes
+                categories,
+                images,
+                optionDTOs,
+                Collections.emptyList(), // attributes (not implemented yet)
                 product.getMetaTitle(),
                 product.getMetaDescription(),
                 product.getMetaKeyword(),

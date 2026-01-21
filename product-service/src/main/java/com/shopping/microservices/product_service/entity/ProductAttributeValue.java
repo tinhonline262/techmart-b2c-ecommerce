@@ -14,8 +14,8 @@ import org.hibernate.annotations.OnDeleteAction;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "product_option_combination", schema = "product_service_db")
-public class ProductOptionCombination {
+@Table(name = "product_option_value", schema = "product_service_db")
+public class ProductAttributeValue {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -24,16 +24,17 @@ public class ProductOptionCombination {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    @JoinColumn(name = "product_option_id", nullable = false)
+    private ProductAttribute productAttribute;
 
     @Size(max = 255)
-    @Column(name = "value")
+    @NotNull
+    @Column(name = "value", nullable = false)
     private String value;
 
-    @Size(max = 100)
-    @Column(name = "sku", length = 100)
-    private String sku;
+    @Size(max = 50)
+    @Column(name = "display_type", length = 50)
+    private String displayType;
 
     @ColumnDefault("0")
     @Column(name = "display_order")
