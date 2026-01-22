@@ -1,4 +1,4 @@
-package com.shopping.microservices.product_service.config;
+package com.shopping.microservices.cart_service.config;
 
 
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -11,12 +11,12 @@ import org.springframework.context.annotation.Configuration;
 import java.util.concurrent.TimeUnit;
 
 /**
- * CaffeineConfig - Configuration du cache local (L1)
+ * CaffeineConfig - Local cache configuration (L1)
  *
  * 🎯 CONCEPT: Multi-Level Caching
  *
  * L1 (Caffeine) → L2 (Redis) → Database
- *    1-5ms         10-20ms       300-500ms\
+ *    1-5ms         10-20ms       300-500ms
  **/
 @Configuration
 @EnableCaching
@@ -48,16 +48,11 @@ public class CaffeineConfig {
     @Bean(name = "caffeineCacheManager")
     public CacheManager caffeineCacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager(
-                "productById",   // Cache product by ID
-                "categories",    // Category cache (very stable)
-                "topProducts"  // Top products (hot data),
-
-//                "brands", "brandById", "brandBySlug", "publishedBrands"
+                "customerCart"    // Customer cart items cache
         );
 
-
         cacheManager.setCaffeine(Caffeine.newBuilder()
-                // Tail max (memory protection)
+                // Max size (memory protection)
                 .maximumSize(10_000)
 
                 // Absolute TTL
@@ -78,19 +73,15 @@ public class CaffeineConfig {
 
     /**
      * Configuration for ultra-stable data
-     * e.g., system configuration, root categories
+     * e.g., system configuration, lookup tables
      */
     @Bean(name = "longTermCaffeineCache")
     public CacheManager longTermCaffeineCacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager("longTermCache",
-                "publishedBrands", "categories_page",
-                "published_categories", "category_by_slug", "category_suggestions");
-
-
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager("longTermCache");
 
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .maximumSize(1_000)
-                .expireAfterWrite(1, TimeUnit.HOURS) // TTL long
+                .expireAfterWrite(1, TimeUnit.HOURS) // Long TTL
                 .recordStats()
         );
 
@@ -98,12 +89,11 @@ public class CaffeineConfig {
     }
     /**
      * Configuration for volatile data
-     * e.g., search results, suggestions
+     * e.g., search results, temporary data
      */
     @Bean(name = "shortTermCaffeineCache")
     public CacheManager shortTermCaffeineCacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager("searchCache",
-                "brandBySlug");
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager("searchCache");
 
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .maximumSize(5_000)

@@ -1,9 +1,9 @@
 package com.shopping.microservices.product_service.mapper;
 
-import com.shopping.microservices.product_service.dto.BrandCreationDTO;
-import com.shopping.microservices.product_service.dto.BrandDTO;
-import com.shopping.microservices.product_service.dto.BrandDetailDTO;
-import com.shopping.microservices.product_service.dto.BrandUpdateDTO;
+import com.shopping.microservices.product_service.dto.brand.BrandCreationDTO;
+import com.shopping.microservices.product_service.dto.brand.BrandDTO;
+import com.shopping.microservices.product_service.dto.brand.BrandDetailDTO;
+import com.shopping.microservices.product_service.dto.brand.BrandUpdateDTO;
 import com.shopping.microservices.product_service.entity.Brand;
 import org.springframework.stereotype.Component;
 
@@ -48,28 +48,22 @@ public class BrandMapper {
                 brand.getId(),
                 brand.getName(),
                 brand.getSlug(),
-                null, // description
-                null, // logoUrl
-                Boolean.TRUE.equals(brand.getIsPublished()),
-                null, // createdAt
-                null  // updatedAt
+                Boolean.TRUE.equals(brand.getIsPublished())
         );
     }
 
     /**
      * Map Brand entity to BrandDetailDTO
      */
-    public BrandDetailDTO toDetailDTO(Brand brand) {
+    public BrandDetailDTO toDetailDTO(Brand brand, int productCount) {
         if (brand == null) return null;
 
         return new BrandDetailDTO(
                 brand.getId(),
                 brand.getName(),
                 brand.getSlug(),
-                null, // description
-                null, // logoUrl
                 Boolean.TRUE.equals(brand.getIsPublished()),
-                0     // productCount
+                productCount     // productCount
         );
     }
 

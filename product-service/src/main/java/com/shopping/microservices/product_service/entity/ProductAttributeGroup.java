@@ -6,16 +6,14 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "product_attribute", schema = "product_service_db")
-public class ProductAttribute {
+@Table(name = "product_attribute_group", schema = "product_service_db")
+public class ProductAttributeGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -25,11 +23,6 @@ public class ProductAttribute {
     @NotNull
     @Column(name = "name", nullable = false)
     private String name;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @OnDelete(action = OnDeleteAction.SET_NULL)
-    @JoinColumn(name = "product_attribute_group_id")
-    private ProductAttributeGroup productAttributeGroup;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")

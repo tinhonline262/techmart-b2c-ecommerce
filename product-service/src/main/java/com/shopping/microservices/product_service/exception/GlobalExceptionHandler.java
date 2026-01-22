@@ -53,6 +53,23 @@ public class GlobalExceptionHandler{
                 .status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), ex.getMessage(), request.getRequestURI()));
     }
+    
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<ApiResponse<String>> handleCategoryNotFound(CategoryNotFoundException ex, HttpServletRequest request) {
+        log.warn("Category not found: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), ex.getMessage(), request.getRequestURI()));
+    }
+    
+    @ExceptionHandler(BrandNotFoundException.class)
+    public ResponseEntity<ApiResponse<String>> handleBrandNotFound(BrandNotFoundException ex, HttpServletRequest request) {
+        log.warn("Brand not found: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), ex.getMessage(), request.getRequestURI()));
+    }
+    
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<String> handle404(NoHandlerFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)

@@ -1,7 +1,10 @@
 package com.shopping.microservices.product_service.mapper;
 
-import com.shopping.microservices.product_service.dto.*;
+import com.shopping.microservices.product_service.dto.category.*;
 import com.shopping.microservices.product_service.entity.Category;
+import com.shopping.microservices.product_service.repository.CategoryRepository;
+import com.shopping.microservices.product_service.repository.ProductCategoryRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -9,7 +12,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class CategoryMapper {
+
+    private final CategoryRepository categoryRepository;
+    private final ProductCategoryRepository productCategoryRepository;
 
     /**
      * Map CategoryCreationDTO to Category entity
@@ -17,7 +24,7 @@ public class CategoryMapper {
     public Category toEntity(CategoryCreationDTO dto) {
         if (dto == null) return null;
 
-        return Category.builder()
+        Category category = Category.builder()
                 .name(dto.name())
                 .slug(dto.slug())
                 .description(dto.description())
@@ -26,6 +33,15 @@ public class CategoryMapper {
                 .metaKeyword(dto.metaKeywords())
                 .metaDescription(dto.metaDescription())
                 .build();
+        
+        // Handle parent relationship
+        if (dto.parentId() != null) {
+            Category parent = categoryRepository.findById(dto.parentId())
+                    .orElse(null);
+            category.setParent(parent);
+        }
+        
+        return category;
     }
 
     /**
@@ -41,6 +57,13 @@ public class CategoryMapper {
         if (dto.isPublished() != null) category.setIsPublished(dto.isPublished());
         if (dto.metaKeywords() != null) category.setMetaKeyword(dto.metaKeywords());
         if (dto.metaDescription() != null) category.setMetaDescription(dto.metaDescription());
+        
+        // Handle parent relationship update
+        if (dto.parentId() != null) {
+            Category parent = categoryRepository.findById(dto.parentId())
+                    .orElse(null);
+            category.setParent(parent);
+        }
     }
 
     /**
@@ -48,24 +71,7 @@ public class CategoryMapper {
      */
     public CategoryDTO toDTO(Category category) {
         if (category == null) return null;
-
-        return new CategoryDTO(
-                category.getId(),
-                category.getName(),
-                category.getSlug(),
-                category.getDescription(),
-                null, // imageUrl
-                category.getParent() != null ? category.getParent().getId() : null,
-                category.getParent() != null ? category.getParent().getName() : null,
-                Collections.emptyList(), // children
-                category.getDisplayOrder(),
-                Boolean.TRUE.equals(category.getIsPublished()),
-                null, // metaTitle
-                category.getMetaDescription(),
-                category.getMetaKeyword(),
-                null, // createdAt
-                null  // updatedAt
-        );
+        return CategoryDTO.toDTO(category);
     }
 
     /**
@@ -73,23 +79,12 @@ public class CategoryMapper {
      */
     public CategoryDetailDTO toDetailDTO(Category category) {
         if (category == null) return null;
-
-        return new CategoryDetailDTO(
-                category.getId(),
-                category.getName(),
-                category.getSlug(),
-                category.getDescription(),
-                null, // imageUrl
-                category.getParent() != null ? category.getParent().getId() : null,
-                category.getParent() != null ? category.getParent().getName() : null,
-                Collections.emptyList(), // children
-                null, // metaTitle
-                category.getMetaDescription(),
-                category.getMetaKeyword(),
-                category.getDisplayOrder(),
-                Boolean.TRUE.equals(category.getIsPublished()),
-                0     // productCount
-        );
+        
+        // Get product count for this category
+        int productCount = productCategoryRepository.findByCategoryId(category.getId()).size();
+        
+        // For now, imageUrl is null (placeholder for future image service integration)
+        return CategoryDetailDTO.toDTO(category, null, productCount);
     }
 
     /**
@@ -116,7 +111,7 @@ public class CategoryMapper {
     public List<CategoryDTO> toDTOList(List<Category> categories) {
         if (categories == null) return Collections.emptyList();
         return categories.stream()
-                .map(this::toDTO)
+                .map(CategoryDTO::toDTO)
                 .collect(Collectors.toList());
     }
 }

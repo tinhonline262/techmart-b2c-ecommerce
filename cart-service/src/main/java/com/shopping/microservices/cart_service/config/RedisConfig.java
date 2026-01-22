@@ -1,4 +1,4 @@
-package com.shopping.microservices.product_service.config;
+package com.shopping.microservices.cart_service.config;
 
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -10,6 +10,7 @@ import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 import org.redisson.spring.cache.RedissonSpringCacheManager;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +23,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,17 +45,27 @@ import java.util.Map;
 @Configuration
 public class RedisConfig {
 
+    @Value("${spring.data.redis.host:localhost}")
+    private String redisHost;
+
+    @Value("${spring.data.redis.port:6379}")
+    private int redisPort;
+
+    @Value("${spring.data.redis.password:#{null}}")
+    private String redisPassword;
+
     /**
      * RedisConnectionFactory – Connection to Redis
      * Uses Lettuce (a high-performance, thread-safe Redis client)
      */
-
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
-        config.setHostName("localhost");
-        config.setPort(6379);
-        // config.setPassword("your-redis-password"); // En production
+        config.setHostName(redisHost);
+        config.setPort(redisPort);
+        if (redisPassword != null && !redisPassword.isEmpty()) {
+            config.setPassword(redisPassword);
+        }
 
         return new LettuceConnectionFactory(config);
     }
@@ -90,7 +102,7 @@ public class RedisConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
-        // Sérialisation with custom ObjectMapper for type info + Java 8 time support
+        // Serialization with custom ObjectMapper for type info + Java 8 time support
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
         GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(redisObjectMapper());
 
@@ -114,13 +126,19 @@ public class RedisConfig {
     @Bean
     public RedissonClient redissonClient() {
         Config config = new Config();
-        config.useSingleServer()
-                .setAddress("redis://localhost:6379")
+        String redisAddress = "redis://" + redisHost + ":" + redisPort;
+        
+        var serverConfig = config.useSingleServer()
+                .setAddress(redisAddress)
                 .setConnectionPoolSize(50)
                 .setConnectionMinimumIdleSize(10)
                 .setTimeout(3000)
                 .setRetryAttempts(3)
                 .setRetryInterval(1500);
+        
+        if (redisPassword != null && !redisPassword.isEmpty()) {
+            serverConfig.setPassword(redisPassword);
+        }
 
         return Redisson.create(config);
     }
@@ -136,7 +154,7 @@ public class RedisConfig {
     @Bean
     public CacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
 
-        // Configuration par défaut - use custom ObjectMapper for type info + Java 8 time support
+        // Default configuration - use custom ObjectMapper for type info + Java 8 time support
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration
                 .defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(10))
@@ -151,50 +169,18 @@ public class RedisConfig {
         // Specific configurations per cache
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
 
-        // Products: 10 minutes (frequently read, rarely changes)
-        cacheConfigurations.put("products",
-                defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        // Customer cart: 2 minutes (frequently updated during shopping session)
+        cacheConfigurations.put("customerCart",
+                defaultConfig.entryTtl(Duration.ofMinutes(2)));
 
-        // Product by ID: 15 minutes (very stable)
-        cacheConfigurations.put("productById",
-                defaultConfig.entryTtl(Duration.ofMinutes(15)));
-
-        // Categories: 1 hour (almost static)
-        cacheConfigurations.put("categories",
+        // Long-term cache: 1 hour (stable data)
+        cacheConfigurations.put("longTermCache",
                 defaultConfig.entryTtl(Duration.ofHours(1)));
 
-        // Search results: 5 minutes (can change frequently)
-        cacheConfigurations.put("searchResults",
-                defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        // Search cache: 1 minute (volatile data)
+        cacheConfigurations.put("searchCache",
+                defaultConfig.entryTtl(Duration.ofMinutes(1)));
 
-        // Price range: 3 minutes (prices fluctuate)
-        cacheConfigurations.put("priceRange",
-                defaultConfig.entryTtl(Duration.ofMinutes(3)));
-
-        cacheConfigurations.put("brands",
-                defaultConfig.entryTtl(Duration.ofHours(1)));
-
-        cacheConfigurations.put("brandById",
-                defaultConfig.entryTtl(Duration.ofMinutes(15)));
-        cacheConfigurations.put("brandBySlug",
-                defaultConfig.entryTtl(Duration.ofMinutes(5)));
-        cacheConfigurations.put("publishedBrands",
-                defaultConfig.entryTtl(Duration.ofMinutes(10)));
-
-        cacheConfigurations.put("categories_page",
-                defaultConfig.entryTtl(Duration.ofHours(2)));
-
-        cacheConfigurations.put("category_by_id",
-                defaultConfig.entryTtl(Duration.ofMinutes(30)));
-
-        cacheConfigurations.put("published_categories",
-                defaultConfig.entryTtl(Duration.ofHours(2)));
-
-        cacheConfigurations.put("category_by_slug",
-                defaultConfig.entryTtl(Duration.ofHours(2)));
-
-        cacheConfigurations.put("category_suggestions",
-                defaultConfig.entryTtl(Duration.ofHours(2)));
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)
