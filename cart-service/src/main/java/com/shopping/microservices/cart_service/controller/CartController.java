@@ -3,111 +3,94 @@ package com.shopping.microservices.cart_service.controller;
 import com.shopping.microservices.cart_service.dto.ApiResponse;
 import com.shopping.microservices.cart_service.dto.CartItemRequestDto;
 import com.shopping.microservices.cart_service.dto.CartItemResponseDto;
-import com.shopping.microservices.cart_service.repository.CartItemRepository;
+import com.shopping.microservices.cart_service.service.CartItemService;
 import com.shopping.microservices.cart_service.util.SecurityUtils;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
 
-
+/**
+ * REST Controller for cart operations
+ */
 @RestController
-@RequestMapping("/api/v1/public/cart")
+@RequestMapping("/api/v1/public/carts")
 @RequiredArgsConstructor
 public class CartController {
 
+    private final CartItemService cartItemService;
+
+    /**
+     * Add item to cart or update quantity if already exists
+     */
     @PostMapping("/items")
     public ResponseEntity<ApiResponse<CartItemResponseDto>> addItemToCart(
-            @Valid @RequestBody CartItemRequestDto request,
-            HttpServletRequest httpRequest) {
+            @Valid @RequestBody CartItemRequestDto request) {
         
-        // Get authenticated customer ID from security context
         String customerId = SecurityUtils.getCurrentCustomerId();
-        
-        // TODO: Implement business logic to add item to cart
-        // Placeholder response
-        CartItemResponseDto response = CartItemResponseDto.builder()
-                .customerId(customerId)
-                .productId(request.getProductId())
-                .quantity(request.getQuantity())
-                .build();
+        CartItemResponseDto response = cartItemService.addOrUpdateCartItem(customerId, request);
         
         return ResponseEntity.ok(
                 ApiResponse.success(HttpStatus.OK.value(), "Item added to cart successfully", response)
         );
     }
 
-
+    /**
+     * Update cart item quantity
+     */
     @PutMapping("/items/{productId}")
     public ResponseEntity<ApiResponse<CartItemResponseDto>> updateCartItemQuantity(
             @PathVariable Long productId,
-            @Valid @RequestBody CartItemRequestDto request,
-            HttpServletRequest httpRequest) {
+            @Valid @RequestBody CartItemRequestDto request) {
         
-        // Get authenticated customer ID from security context
         String customerId = SecurityUtils.getCurrentCustomerId();
-        
-        // TODO: Implement business logic to update item quantity
-        // Placeholder response
-        CartItemResponseDto response = CartItemResponseDto.builder()
-                .customerId(customerId)
-                .productId(productId)
-                .quantity(request.getQuantity())
-                .build();
+        CartItemResponseDto response = cartItemService.updateCartItemQuantity(customerId, productId, request);
         
         return ResponseEntity.ok(
                 ApiResponse.success(HttpStatus.OK.value(), "Cart item quantity updated successfully", response)
         );
     }
 
-
+    /**
+     * Get all cart items for authenticated customer
+     */
     @GetMapping("/items")
-    public ResponseEntity<ApiResponse<List<CartItemResponseDto>>> getCartItems(
-            HttpServletRequest httpRequest) {
+    public ResponseEntity<ApiResponse<List<CartItemResponseDto>>> getCartItems() {
         
-        // Get authenticated customer ID from security context
         String customerId = SecurityUtils.getCurrentCustomerId();
-        
-        // TODO: Implement business logic to retrieve cart items
-        // Placeholder response
-        List<CartItemResponseDto> items = Collections.emptyList();
+        List<CartItemResponseDto> items = cartItemService.getCartItemsByCustomerId(customerId);
         
         return ResponseEntity.ok(
                 ApiResponse.success(HttpStatus.OK.value(), "Cart items retrieved successfully", items)
         );
     }
 
-
+    /**
+     * Remove single cart item
+     */
     @DeleteMapping("/items/{productId}")
-    public ResponseEntity<ApiResponse<Void>> removeCartItem(
-            @PathVariable Long productId,
-            HttpServletRequest httpRequest) {
+    public ResponseEntity<ApiResponse<Void>> removeCartItem(@PathVariable Long productId) {
         
-        // Get authenticated customer ID from security context
         String customerId = SecurityUtils.getCurrentCustomerId();
+        cartItemService.removeCartItem(customerId, productId);
         
-        // TODO: Implement business logic to remove item from cart
-        // Placeholder response
         return ResponseEntity.ok(
                 ApiResponse.success(HttpStatus.OK.value(), "Item removed from cart successfully", null)
         );
     }
 
+    /**
+     * Remove multiple cart items
+     */
     @DeleteMapping("/items")
-    public ResponseEntity<ApiResponse<Void>> removeMultipleCartItems(
-            @RequestParam List<Long> productIds,
-            HttpServletRequest httpRequest) {
+    public ResponseEntity<ApiResponse<Void>> removeMultipleCartItems(@RequestParam List<Long> productIds) {
         
-        // Get authenticated customer ID from security context
         String customerId = SecurityUtils.getCurrentCustomerId();
+        cartItemService.removeMultipleCartItems(customerId, productIds);
         
-        // TODO: Implement business logic to remove multiple items from cart
-        // Placeholder response
         return ResponseEntity.ok(
                 ApiResponse.success(HttpStatus.OK.value(), "Items removed from cart successfully", null)
         );

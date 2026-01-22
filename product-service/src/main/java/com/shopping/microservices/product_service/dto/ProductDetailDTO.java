@@ -1,5 +1,8 @@
 package com.shopping.microservices.product_service.dto;
 
+import com.shopping.microservices.product_service.dto.brand.BrandDTO;
+import com.shopping.microservices.product_service.dto.category.CategoryDTO;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

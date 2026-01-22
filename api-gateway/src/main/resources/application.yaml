@@ -10,7 +10,11 @@ spring:
             - id: product-service
               uri: lb://product-service
               predicates:
-                - Path=/api/v1/products/**
+                - Path=/api/v1/products/**,
+                  /api/v1/categories/**,
+                  /api/v1/brands/**,
+                  /api/v1/public/brands/**,
+                  /api/v1/public/categories/**
               filters:
                 - AuthenticationFilter
 
@@ -50,7 +54,7 @@ spring:
             - id: cart-service
               uri: lb://cart-service
               predicates:
-                - Path=/api/v1/carts/**
+                - Path=/api/v1/public/carts/**
 
             - id: customer-service
               uri: lb://customer-service

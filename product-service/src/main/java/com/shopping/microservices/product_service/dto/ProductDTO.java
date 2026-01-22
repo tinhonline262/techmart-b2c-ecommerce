@@ -1,6 +1,8 @@
 package com.shopping.microservices.product_service.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.shopping.microservices.product_service.dto.brand.BrandDTO;
+import com.shopping.microservices.product_service.dto.category.CategoryDTO;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
