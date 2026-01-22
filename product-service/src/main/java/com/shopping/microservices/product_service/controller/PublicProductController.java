@@ -2,7 +2,10 @@ package com.shopping.microservices.product_service.controller;
 
 import com.shopping.microservices.product_service.dto.*;
 import com.shopping.microservices.product_service.repository.*;
+import com.shopping.microservices.product_service.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/public/products")
 @RequiredArgsConstructor
+@Slf4j
 public class PublicProductController {
 
     private final ProductRepository productRepository;
@@ -27,12 +31,14 @@ public class PublicProductController {
     private final ProductOptionValueRepository productOptionValueRepository;
     private final ProductOptionCombinationRepository productOptionCombinationRepository;
     private final ProductRelatedRepository productRelatedRepository;
+    private final ProductService productService;
 
     /**
      * Get all published products with multi-criteria filtering.
      * 
      * GET /api/v1/public/products
-     * GET /api/v1/public/products?categoryIds=1,2&brandIds=1&minPrice=10&maxPrice=100
+     * GET
+     * /api/v1/public/products?categoryIds=1,2&brandIds=1&minPrice=10&maxPrice=100
      */
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
@@ -45,7 +51,21 @@ public class PublicProductController {
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String sortDirection,
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Products retrieved successfully"));
+
+        Page<ProductSummaryDTO> productPage = productService.findPublishedProducts(
+                categoryIds, brandIds, minPrice, maxPrice, inStock, sortBy, sortDirection, pageable);
+
+        PageResponseDTO<ProductSummaryDTO> pageResponse = new PageResponseDTO<>(
+                productPage.getContent(),
+                productPage.getNumber(),
+                productPage.getSize(),
+                productPage.getTotalElements(),
+                productPage.getTotalPages(),
+                productPage.isFirst(),
+                productPage.isLast(),
+                productPage.isEmpty());
+
+        return ResponseEntity.ok(ApiResponse.success(pageResponse, "Products retrieved successfully"));
     }
 
     /**
@@ -57,7 +77,8 @@ public class PublicProductController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<FeaturedProductDTO>>> getFeaturedProducts(
             @RequestParam(defaultValue = "10") int limit) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Featured products retrieved successfully"));
+        List<FeaturedProductDTO> featuredProducts = productService.findFeaturedProducts(limit);
+        return ResponseEntity.ok(ApiResponse.success(featuredProducts, "Featured products retrieved successfully"));
     }
 
     /**
@@ -69,7 +90,8 @@ public class PublicProductController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<FeaturedProductDTO>>> getFeaturedProductsByIds(
             @RequestParam List<Long> ids) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Featured products by IDs retrieved successfully"));
+        List<FeaturedProductDTO> products = productService.findFeaturedProductsByIds(ids);
+        return ResponseEntity.ok(ApiResponse.success(products, "Featured products by IDs retrieved successfully"));
     }
 
     /**
@@ -80,18 +102,21 @@ public class PublicProductController {
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductSummaryDTO>> getProductById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product retrieved successfully"));
+        ProductSummaryDTO product = productService.findPublishedProductById(id);
+        return ResponseEntity.ok(ApiResponse.success(product, "Product retrieved successfully"));
     }
 
     /**
-     * Get product full detail by ID (includes images, attributes, categories, brand).
+     * Get product full detail by ID (includes images, attributes, categories,
+     * brand).
      * 
      * GET /api/v1/public/products/{id}/detail
      */
     @GetMapping("/{id}/detail")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductDetailDTO>> getProductDetail(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product detail retrieved successfully"));
+        ProductDetailDTO productDetail = productService.findPublishedProductDetailById(id);
+        return ResponseEntity.ok(ApiResponse.success(productDetail, "Product detail retrieved successfully"));
     }
 
     /**
@@ -102,31 +127,54 @@ public class PublicProductController {
     @GetMapping("/{id}/variations")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<ProductVariationDTO>>> getProductVariations(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product variations retrieved successfully"));
+        log.info("Fetching product variations for product ID: {}", id);
+        List<ProductVariationDTO> variations = productService.findProductVariations(id);
+        return ResponseEntity.ok(ApiResponse.success(variations, "Product variations retrieved successfully"));
     }
 
     /**
      * Get related products by product ID.
      * 
      * GET /api/v1/public/products/{id}/related
+     * GET /api/v1/public/products/{id}/related?limit=10
      */
     @GetMapping("/{id}/related")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<ProductRelatedDTO>>> getRelatedProducts(
             @PathVariable Long id,
             @RequestParam(defaultValue = "10") int limit) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Related products retrieved successfully"));
+        log.info("Fetching related products for product ID: {} with limit: {}", id, limit);
+        List<ProductRelatedDTO> relatedProducts = productService.findRelatedProducts(id, limit);
+        return ResponseEntity.ok(ApiResponse.success(relatedProducts, "Related products retrieved successfully"));
     }
 
     /**
-     * Get product by slug (SEO-friendly URL).
+     * Get product related products by product ID.
+     * 
+     * GET /api/v1/public/products/{id}/related
+     * GET /api/v1/public/products/{id}/related?limit=10
+     */
+    @GetMapping("/{id}/related")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<ApiResponse<List<ProductRelatedDTO>>> getRelatedProducts(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "10") int limit) {
+        log.info("Fetching related products for product ID: {} with limit: {}", id, limit);
+        List<ProductRelatedDTO> relatedProducts = productService.findRelatedProducts(id, limit);
+        return ResponseEntity.ok(ApiResponse.success(relatedProducts, "Related products retrieved successfully"));
+    }
+
+    /**
+     * Get product by slug (SEO-friendly URLs).
      * 
      * GET /api/v1/public/products/slug/{slug}
      */
     @GetMapping("/slug/{slug}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductDetailDTO>> getProductBySlug(@PathVariable String slug) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product retrieved by slug successfully"));
+        log.info("Fetching product by slug: {}", slug);
+        ProductDetailDTO product = productService.findPublishedProductBySlug(slug);
+        return ResponseEntity.ok(ApiResponse.success(product, "Product retrieved by slug successfully"));
     }
 
     /**
@@ -137,7 +185,22 @@ public class PublicProductController {
     @GetMapping("/{id}/slug")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<String>> getProductSlug(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product slug retrieved successfully"));
+        log.info("Fetching product slug for product ID: {}", id);
+        String slug = productService.getProductSlugById(id);
+        return ResponseEntity.ok(ApiResponse.success(slug, "Product slug retrieved successfully"));
+    }
+
+    /**
+     * Get product variations (SKU combinations) for a specific product.
+     * 
+     * GET /api/v1/public/products/{id}/variations
+     */
+    @GetMapping("/{id}/variations")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<ApiResponse<List<ProductVariationDTO>>> getProductVariations(@PathVariable Long id) {
+        log.info("Fetching product variations for product ID: {}", id);
+        List<ProductVariationDTO> variations = productService.findProductVariations(id);
+        return ResponseEntity.ok(ApiResponse.success(variations, "Product variations retrieved successfully"));
     }
 
     /**
@@ -160,7 +223,8 @@ public class PublicProductController {
      */
     @GetMapping("/attribute-groups")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<ApiResponse<PageResponseDTO<ProductAttributeGroupDTO>>> getAttributeGroups(Pageable pageable) {
+    public ResponseEntity<ApiResponse<PageResponseDTO<ProductAttributeGroupDTO>>> getAttributeGroups(
+            Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(null, "Product attribute groups retrieved successfully"));
     }
 
@@ -173,7 +237,9 @@ public class PublicProductController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<ProductOptionValueDTO>>> getProductOptionValues(
             @PathVariable Long productId) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product option values retrieved successfully"));
+        log.info("Fetching product option values for product ID: {}", productId);
+        List<ProductOptionValueDTO> optionValues = productService.getProductOptionValues(productId);
+        return ResponseEntity.ok(ApiResponse.success(optionValues, "Product option values retrieved successfully"));
     }
 
     /**
@@ -185,6 +251,9 @@ public class PublicProductController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<ProductOptionCombinationDTO>>> getProductOptionCombinations(
             @PathVariable Long productId) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product option combinations retrieved successfully"));
+        log.info("Fetching product option combinations for product ID: {}", productId);
+        List<ProductOptionCombinationDTO> combinations = productService.getProductOptionCombinations(productId);
+        return ResponseEntity
+                .ok(ApiResponse.success(combinations, "Product option combinations retrieved successfully"));
     }
 }

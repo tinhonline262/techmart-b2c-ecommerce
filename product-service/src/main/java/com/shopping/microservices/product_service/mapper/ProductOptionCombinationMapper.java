@@ -20,18 +20,19 @@ public class ProductOptionCombinationMapper {
      * Map ProductOptionCombination entity to ProductOptionCombinationDTO
      */
     public ProductOptionCombinationDTO toDTO(ProductOptionCombination combination) {
-        if (combination == null) return null;
+        if (combination == null)
+            return null;
 
         return new ProductOptionCombinationDTO(
                 combination.getId(),
                 combination.getProduct() != null ? combination.getProduct().getId() : null,
-                combination.getSku(),
+                combination.getValue(), // Use value field instead of sku
                 null, // price
                 null, // stockQuantity
                 null, // thumbnailUrl
                 Collections.emptyList(), // optionValues - to be loaded separately
                 null, // createdAt
-                null  // updatedAt
+                null // updatedAt
         );
     }
 
@@ -39,11 +40,12 @@ public class ProductOptionCombinationMapper {
      * Map ProductOptionCombination entity to ProductVariationDTO
      */
     public ProductVariationDTO toVariationDTO(ProductOptionCombination combination) {
-        if (combination == null) return null;
+        if (combination == null)
+            return null;
 
         return new ProductVariationDTO(
                 combination.getId(),
-                combination.getSku(),
+                combination.getValue(), // Use value field instead of sku
                 null, // price
                 null, // oldPrice
                 null, // stockQuantity
@@ -57,7 +59,8 @@ public class ProductOptionCombinationMapper {
      * Map list of ProductOptionCombinations to list of ProductOptionCombinationDTOs
      */
     public List<ProductOptionCombinationDTO> toDTOList(List<ProductOptionCombination> combinations) {
-        if (combinations == null) return Collections.emptyList();
+        if (combinations == null)
+            return Collections.emptyList();
         return combinations.stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -67,7 +70,8 @@ public class ProductOptionCombinationMapper {
      * Map list of ProductOptionCombinations to list of ProductVariationDTOs
      */
     public List<ProductVariationDTO> toVariationDTOList(List<ProductOptionCombination> combinations) {
-        if (combinations == null) return Collections.emptyList();
+        if (combinations == null)
+            return Collections.emptyList();
         return combinations.stream()
                 .map(this::toVariationDTO)
                 .collect(Collectors.toList());
