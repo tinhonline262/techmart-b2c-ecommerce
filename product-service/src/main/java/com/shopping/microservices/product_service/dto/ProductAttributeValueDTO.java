@@ -4,13 +4,9 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 public record ProductAttributeValueDTO(
-        Long id,
         Long attributeId,
         String attributeName,
-        String value,
-        String displayType,
-        Integer displayOrder,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        String attributeGroupName,
+        String value
 ) implements Serializable {
 }

@@ -3,31 +3,32 @@ package com.shopping.microservices.product_service.mapper;
 import com.shopping.microservices.product_service.dto.ProductAttributeCreationDTO;
 import com.shopping.microservices.product_service.dto.ProductAttributeDTO;
 import com.shopping.microservices.product_service.dto.ProductAttributeUpdateDTO;
-import com.shopping.microservices.product_service.entity.Product;
 import com.shopping.microservices.product_service.entity.ProductAttribute;
-import lombok.RequiredArgsConstructor;
+import com.shopping.microservices.product_service.entity.ProductAttributeGroup;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-@RequiredArgsConstructor
 public class ProductAttributeMapper {
-
-    private final ProductAttributeValueMapper productAttributeValueMapper;
 
     /**
      * Map ProductAttributeCreationDTO to ProductAttribute entity
      */
-    public ProductAttribute toEntity(ProductAttributeCreationDTO dto, Product product) {
+    public ProductAttribute toEntity(ProductAttributeCreationDTO dto, ProductAttributeGroup group) {
         if (dto == null) return null;
 
-        return ProductAttribute.builder()
-                .product(product)
-                .name(dto.name())
-                .build();
+        ProductAttribute attribute = new ProductAttribute();
+        attribute.setName(dto.name());
+        attribute.setProductAttributeGroup(group);
+        attribute.setCreatedAt(Instant.now());
+        attribute.setUpdatedAt(Instant.now());
+        return attribute;
     }
 
     /**
@@ -36,7 +37,13 @@ public class ProductAttributeMapper {
     public void updateEntity(ProductAttribute attribute, ProductAttributeUpdateDTO dto) {
         if (dto == null) return;
 
-        if (dto.name() != null) attribute.setName(dto.name());
+        if (dto.name() != null) {
+            attribute.setName(dto.name());
+        }
+        if (dto.groupId() != null) {
+            // groupId will be set via service - mapper doesn't have access to repository
+        }
+        attribute.setUpdatedAt(Instant.now());
     }
 
     /**
@@ -48,9 +55,10 @@ public class ProductAttributeMapper {
         return new ProductAttributeDTO(
                 attribute.getId(),
                 attribute.getName(),
-                Collections.emptyList(), // values - to be loaded separately
-                null, // createdAt
-                null  // updatedAt
+                attribute.getProductAttributeGroup() != null ? attribute.getProductAttributeGroup().getId() : null,
+                attribute.getProductAttributeGroup() != null ? attribute.getProductAttributeGroup().getName() : null,
+                convertInstantToLocalDateTime(attribute.getCreatedAt()),
+                convertInstantToLocalDateTime(attribute.getUpdatedAt())
         );
     }
 
@@ -62,5 +70,13 @@ public class ProductAttributeMapper {
         return attributes.stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Convert Instant to LocalDateTime
+     */
+    private LocalDateTime convertInstantToLocalDateTime(Instant instant) {
+        if (instant == null) return null;
+        return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
     }
 }

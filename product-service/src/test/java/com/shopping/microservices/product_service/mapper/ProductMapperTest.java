@@ -4,6 +4,7 @@ import com.shopping.microservices.product_service.entity.Product;
 import com.shopping.microservices.product_service.entity.ProductOption;
 import com.shopping.microservices.product_service.entity.ProductOptionCombination;
 import com.shopping.microservices.product_service.entity.ProductOptionValue;
+import com.shopping.microservices.product_service.repository.CategoryRepository;
 import com.shopping.microservices.product_service.repository.ProductCategoryRepository;
 import com.shopping.microservices.product_service.repository.ProductImageRepository;
 import com.shopping.microservices.product_service.repository.ProductOptionCombinationRepository;
@@ -18,6 +19,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.mockito.Mockito.mock;
 
 import java.util.List;
 
@@ -49,7 +52,7 @@ public class ProductMapperTest {
         productOptionCombinationMapper = new ProductOptionCombinationMapper(productOptionValueMapper);
         // other mappers used in ProductMapper - simple real instances or mocks
         var brandMapper = new BrandMapper();
-        var categoryMapper = new CategoryMapper();
+        var categoryMapper = new CategoryMapper(mock(CategoryRepository.class), productCategoryRepository);
         var productImageMapper = new ProductImageMapper();
 
         productMapper = new ProductMapper(

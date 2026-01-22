@@ -19,15 +19,16 @@ public class ProductAttributeValueMapper {
         if (value == null) return null;
 
         ProductAttribute attribute = value.getProductAttribute();
+        String attributeGroupName = null;
+        if (attribute != null && attribute.getProductAttributeGroup() != null) {
+            attributeGroupName = attribute.getProductAttributeGroup().getName();
+        }
+
         return new ProductAttributeValueDTO(
-                value.getId(),
                 attribute != null ? attribute.getId() : null,
                 attribute != null ? attribute.getName() : null,
-                value.getValue(),
-                value.getDisplayType(),
-                value.getDisplayOrder(),
-                null, // createdAt
-                null  // updatedAt
+                attributeGroupName,
+                value.getValue()
         );
     }
 

@@ -5,6 +5,7 @@ import com.shopping.microservices.product_service.service.ProductService;
 import com.shopping.microservices.product_service.service.ProductOptionService;
 import com.shopping.microservices.product_service.service.ProductOptionValueService;
 import com.shopping.microservices.product_service.service.ProductAttributeService;
+import com.shopping.microservices.product_service.service.ProductAttributeValueService;
 import com.shopping.microservices.product_service.service.ProductAttributeGroupService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,9 @@ public class AdminProductControllerUnitTest {
     private ProductAttributeService productAttributeService;
 
     @Mock
+    private ProductAttributeValueService productAttributeValueService;
+
+    @Mock
     private ProductAttributeGroupService productAttributeGroupService;
 
     private AdminProductController controller;
@@ -43,7 +47,7 @@ public class AdminProductControllerUnitTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        controller = new AdminProductController(productService, productOptionService, productOptionValueService, productAttributeService, productAttributeGroupService);
+        controller = new AdminProductController(productService, productOptionService, productOptionValueService, productAttributeService, productAttributeValueService, productAttributeGroupService);
     }
 
     private ProductDTO sampleProduct() {

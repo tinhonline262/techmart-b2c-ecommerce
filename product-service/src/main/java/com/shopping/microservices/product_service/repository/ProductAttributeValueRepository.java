@@ -10,7 +10,7 @@ import java.util.List;
 @Repository
 public interface ProductAttributeValueRepository extends JpaRepository<ProductAttributeValue, Long>, JpaSpecificationExecutor<ProductAttributeValue> {
     List<ProductAttributeValue> findByProductAttributeId(Long attributeId);
-    List<ProductAttributeValue> findByProductAttributeProductId(Long productId);
+    List<ProductAttributeValue> findByProductId(Long productId);
     void deleteByProductAttributeId(Long attributeId);
-    void deleteByProductAttributeProductId(Long productId);
+    void deleteByProductId(Long productId);
 }

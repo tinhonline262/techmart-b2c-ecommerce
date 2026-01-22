@@ -7,7 +7,8 @@ import java.util.List;
 public record ProductAttributeDTO(
         Long id,
         String name,
-        List<ProductAttributeValueDTO> values,
+        Long groupId,
+        String groupName,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) implements Serializable {

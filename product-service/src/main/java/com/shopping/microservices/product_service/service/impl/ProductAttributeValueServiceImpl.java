@@ -1,7 +1,7 @@
 package com.shopping.microservices.product_service.service.impl;
 
 import com.shopping.microservices.product_service.dto.ProductAttributeValueDTO;
-import com.shopping.microservices.product_service.entity.ProductAttributeValue;
+import com.shopping.microservices.product_service.mapper.ProductAttributeValueMapper;
 import com.shopping.microservices.product_service.repository.ProductAttributeValueRepository;
 import com.shopping.microservices.product_service.service.ProductAttributeValueService;
 import lombok.AllArgsConstructor;
@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public class ProductAttributeValueServiceImpl implements ProductAttributeValueService {
     
     private final ProductAttributeValueRepository attributeValueRepository;
+    private final ProductAttributeValueMapper attributeValueMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -26,20 +27,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         log.info("Fetching product attribute values for attribute id: {}", attributeId);
         
         return attributeValueRepository.findByProductAttributeId(attributeId).stream()
-                .map(this::mapToDTO)
+                .map(attributeValueMapper::toDTO)
                 .collect(Collectors.toList());
-    }
-
-    private ProductAttributeValueDTO mapToDTO(ProductAttributeValue value) {
-        return new ProductAttributeValueDTO(
-                value.getId(),
-                value.getProductAttribute() != null ? value.getProductAttribute().getId() : null,
-                value.getProductAttribute() != null ? value.getProductAttribute().getName() : null,
-                value.getValue(),
-                value.getDisplayType(),
-                value.getDisplayOrder(),
-                null,
-                null
-        );
     }
 }
