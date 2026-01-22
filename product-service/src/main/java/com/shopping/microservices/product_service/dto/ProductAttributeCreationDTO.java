@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 public record ProductAttributeCreationDTO(
         @NotNull(message = "Product ID is required")
-        Long productId,
+        Long groupId,
         @NotBlank(message = "Attribute name is required")
         @Size(max = 255, message = "Attribute name must not exceed 255 characters")
         String name

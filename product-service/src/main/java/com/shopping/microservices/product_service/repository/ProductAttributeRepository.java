@@ -6,13 +6,11 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProductAttributeRepository extends JpaRepository<ProductAttribute, Long>, JpaSpecificationExecutor<ProductAttribute> {
-
-    List<ProductAttribute> findByProductId(Long productId);
-
-    void deleteByProductId(Long productId);
-
-    boolean existsByNameAndProductId(String name, Long productId);
+    List<ProductAttribute> findByProductAttributeGroupId(Long groupId);
+    boolean existsByName(String name);
+    Optional<ProductAttribute> findByNameIgnoreCase(String name);
 }

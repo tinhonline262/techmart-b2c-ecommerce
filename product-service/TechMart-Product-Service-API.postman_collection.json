@@ -1,0 +1,305 @@
+{
+  "info": {
+    "_postman_id": "techmart-product-api-2026",
+    "name": "TechMart Product Service - Public API",
+    "description": "Collection for testing TechMart Product Service public endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Get All Products (Paginated & Filtered)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products?page=0&size=10&categoryIds=1,2&brandIds=1&minPrice=100&maxPrice=1000&inStock=true&sortBy=price&sortDirection=asc",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products"],
+          "query": [
+            { "key": "page", "value": "0" },
+            { "key": "size", "value": "10" },
+            { "key": "categoryIds", "value": "1,2" },
+            { "key": "brandIds", "value": "1" },
+            { "key": "minPrice", "value": "100" },
+            { "key": "maxPrice", "value": "1000" },
+            { "key": "inStock", "value": "true" },
+            { "key": "sortBy", "value": "price" },
+            { "key": "sortDirection", "value": "asc" }
+          ]
+        },
+        "description": "Get all published products with multi-criteria filtering and pagination"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Get Featured Products",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/featured?limit=10",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "featured"],
+          "query": [{ "key": "limit", "value": "10" }]
+        },
+        "description": "Get top featured products for homepage or promotional displays"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Get Featured Products By IDs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/featured-by-ids?ids=1,2,3,4,5",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "featured-by-ids"],
+          "query": [{ "key": "ids", "value": "1,2,3,4,5" }]
+        },
+        "description": "Get specific featured products by IDs"
+      },
+      "response": []
+    },
+    {
+      "name": "4. Get Product Summary By ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/5",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "5"]
+        },
+        "description": "Get product summary (basic info) by product ID"
+      },
+      "response": []
+    },
+    {
+      "name": "5. Get Product Detail By ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/5/detail",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "5", "detail"]
+        },
+        "description": "Get complete product detail (images, categories, brand, attributes)"
+      },
+      "response": []
+    },
+    {
+      "name": "6. Get Product Variations (SKU Combinations)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/5/variations",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "5", "variations"]
+        },
+        "description": "Get all SKU variants/combinations for a product"
+      },
+      "response": []
+    },
+    {
+      "name": "7. Get Related Products",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/5/related?limit=10",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "5", "related"],
+          "query": [{ "key": "limit", "value": "10" }]
+        },
+        "description": "Get related products for cross-selling (customers also view)"
+      },
+      "response": []
+    },
+    {
+      "name": "8. Get Product By Slug (SEO-friendly URL)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/slug/product-5",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "slug", "product-5"]
+        },
+        "description": "Get product detail by SEO-friendly slug (e.g., product-5, iphone-15-pro)"
+      },
+      "response": []
+    },
+    {
+      "name": "9. Get Product Slug By ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/5/slug",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "5", "slug"]
+        },
+        "description": "Get slug for URL generation - useful for redirects and links"
+      },
+      "response": []
+    },
+    {
+      "name": "10. Get Product Option Values",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/5/option-values",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "5", "option-values"]
+        },
+        "description": "Get all option values (Size, Color, etc.) for product dropdown selection"
+      },
+      "response": []
+    },
+    {
+      "name": "11. Get Product Option Combinations",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/5/option-combinations",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "5", "option-combinations"]
+        },
+        "description": "Get all SKU combinations (Size=M,Color=Black) available for product"
+      },
+      "response": []
+    },
+    {
+      "name": "12. Get Product Attributes (Paginated)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/attributes?page=0&size=10",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "attributes"],
+          "query": [
+            { "key": "page", "value": "0" },
+            { "key": "size", "value": "10" }
+          ]
+        },
+        "description": "Get all product attributes with pagination support (for filtering options)"
+      },
+      "response": []
+    },
+    {
+      "name": "13. Get Product Attribute Groups (Paginated)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/attribute-groups?page=0&size=10",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "attribute-groups"],
+          "query": [
+            { "key": "page", "value": "0" },
+            { "key": "size", "value": "10" }
+          ]
+        },
+        "description": "Get product attribute groups with paginated list of nested attributes"
+      },
+      "response": []
+    }
+  ]
+}

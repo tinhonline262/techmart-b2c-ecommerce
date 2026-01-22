@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProductOptionCombinationRepository extends JpaRepository<ProductOptionCombination, Long>, JpaSpecificationExecutor<ProductOptionCombination> {
+public interface ProductOptionCombinationRepository
+        extends JpaRepository<ProductOptionCombination, Long>, JpaSpecificationExecutor<ProductOptionCombination> {
 
     List<ProductOptionCombination> findByProductId(Long productId);
-
 
     void deleteByProductId(Long productId);
 }
