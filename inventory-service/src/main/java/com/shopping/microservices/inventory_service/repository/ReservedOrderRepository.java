@@ -36,6 +36,15 @@ public interface ReservedOrderRepository extends JpaRepository<ReservedOrder, Lo
     List<ReservedOrder> findExpiredReservations(@Param("currentTime") LocalDateTime currentTime);
 
     /**
+     * Find expired reservations with specific status
+     */
+    @Query("SELECT r FROM ReservedOrder r WHERE r.status = :status AND r.expiresAt < :currentTime")
+    List<ReservedOrder> findExpiredReservations(
+            @Param("status") ReservedOrder.ReservationStatus status,
+            @Param("currentTime") LocalDateTime currentTime
+    );
+
+    /**
      * Update status for all reservations of an order
      */
     @Modifying

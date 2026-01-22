@@ -3,15 +3,10 @@ package com.shopping.microservices.inventory_service.kafka.consumer;
 import com.shopping.microservices.inventory_service.event.*;
 import com.shopping.microservices.inventory_service.kafka.producer.InventoryEventProducer;
 import com.shopping.microservices.inventory_service.service.InventoryReservationService;
-import com.shopping.microservices.inventory_service.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -102,5 +97,6 @@ public class OrderEventConsumer {
             log.error("Error cancelling reservation for order: {}", event.orderNumber(), e);
         }
     }
+
 }
 
