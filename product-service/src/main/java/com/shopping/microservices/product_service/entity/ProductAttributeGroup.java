@@ -8,6 +8,7 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -39,5 +40,8 @@ public class ProductAttributeGroup {
     @Size(max = 255)
     @Column(name = "last_modified_by")
     private String lastModifiedBy;
+
+    @OneToMany(mappedBy = "productAttributeGroup", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<ProductAttribute> productAttributes;
 
 }

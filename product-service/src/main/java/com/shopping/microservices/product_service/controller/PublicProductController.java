@@ -3,6 +3,8 @@ package com.shopping.microservices.product_service.controller;
 import com.shopping.microservices.product_service.dto.*;
 import com.shopping.microservices.product_service.repository.*;
 import com.shopping.microservices.product_service.service.ProductService;
+import com.shopping.microservices.product_service.service.ProductAttributeService;
+import com.shopping.microservices.product_service.service.ProductAttributeGroupService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,6 +34,8 @@ public class PublicProductController {
     private final ProductOptionCombinationRepository productOptionCombinationRepository;
     private final ProductRelatedRepository productRelatedRepository;
     private final ProductService productService;
+    private final ProductAttributeService productAttributeService;
+    private final ProductAttributeGroupService productAttributeGroupService;
 
     /**
      * Get all published products with multi-criteria filtering.
@@ -149,22 +153,6 @@ public class PublicProductController {
     }
 
     /**
-     * Get product related products by product ID.
-     * 
-     * GET /api/v1/public/products/{id}/related
-     * GET /api/v1/public/products/{id}/related?limit=10
-     */
-    @GetMapping("/{id}/related")
-    @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<ApiResponse<List<ProductRelatedDTO>>> getRelatedProducts(
-            @PathVariable Long id,
-            @RequestParam(defaultValue = "10") int limit) {
-        log.info("Fetching related products for product ID: {} with limit: {}", id, limit);
-        List<ProductRelatedDTO> relatedProducts = productService.findRelatedProducts(id, limit);
-        return ResponseEntity.ok(ApiResponse.success(relatedProducts, "Related products retrieved successfully"));
-    }
-
-    /**
      * Get product by slug (SEO-friendly URLs).
      * 
      * GET /api/v1/public/products/slug/{slug}
@@ -191,19 +179,6 @@ public class PublicProductController {
     }
 
     /**
-     * Get product variations (SKU combinations) for a specific product.
-     * 
-     * GET /api/v1/public/products/{id}/variations
-     */
-    @GetMapping("/{id}/variations")
-    @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<ApiResponse<List<ProductVariationDTO>>> getProductVariations(@PathVariable Long id) {
-        log.info("Fetching product variations for product ID: {}", id);
-        List<ProductVariationDTO> variations = productService.findProductVariations(id);
-        return ResponseEntity.ok(ApiResponse.success(variations, "Product variations retrieved successfully"));
-    }
-
-    /**
      * Get product attributes for filtering (public facing).
      * 
      * GET /api/v1/public/products/attributes
@@ -212,7 +187,9 @@ public class PublicProductController {
     @GetMapping("/attributes")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<PageResponseDTO<ProductAttributeDTO>>> getAttributes(Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product attributes retrieved successfully"));
+        log.info("Fetching product attributes for public API");
+        PageResponseDTO<ProductAttributeDTO> attributes = productAttributeService.getAllAttributes(pageable);
+        return ResponseEntity.ok(ApiResponse.success(attributes, "Product attributes retrieved successfully"));
     }
 
     /**
@@ -225,7 +202,9 @@ public class PublicProductController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<PageResponseDTO<ProductAttributeGroupDTO>>> getAttributeGroups(
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product attribute groups retrieved successfully"));
+        log.info("Fetching product attribute groups for public API");
+        PageResponseDTO<ProductAttributeGroupDTO> groups = productAttributeGroupService.getAllAttributeGroups(pageable);
+        return ResponseEntity.ok(ApiResponse.success(groups, "Product attribute groups retrieved successfully"));
     }
 
     /**

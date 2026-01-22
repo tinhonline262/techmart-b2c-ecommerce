@@ -250,6 +250,56 @@
         "description": "Get all SKU combinations (Size=M,Color=Black) available for product"
       },
       "response": []
+    },
+    {
+      "name": "12. Get Product Attributes (Paginated)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/attributes?page=0&size=10",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "attributes"],
+          "query": [
+            { "key": "page", "value": "0" },
+            { "key": "size", "value": "10" }
+          ]
+        },
+        "description": "Get all product attributes with pagination support (for filtering options)"
+      },
+      "response": []
+    },
+    {
+      "name": "13. Get Product Attribute Groups (Paginated)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8081/api/v1/public/products/attribute-groups?page=0&size=10",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8081",
+          "path": ["api", "v1", "public", "products", "attribute-groups"],
+          "query": [
+            { "key": "page", "value": "0" },
+            { "key": "size", "value": "10" }
+          ]
+        },
+        "description": "Get product attribute groups with paginated list of nested attributes"
+      },
+      "response": []
     }
   ]
 }
