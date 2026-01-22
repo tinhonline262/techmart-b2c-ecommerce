@@ -12,3 +12,4 @@ public interface ProductAttributeGroupRepository extends JpaRepository<ProductAt
     boolean existsByName(String name);
     Optional<ProductAttributeGroup> findByNameIgnoreCase(String name);
 }
+

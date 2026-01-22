@@ -86,13 +86,13 @@ public class ProductAttributeServiceImpl implements ProductAttributeService {
     @Transactional
     public ProductAttributeDTO updateAttribute(Long id, ProductAttributeUpdateDTO dto) {
         log.info("Updating product attribute with id: {}", id);
-        
+
         ProductAttribute attribute = attributeRepository.findById(id)
                 .orElseThrow(() -> {
                     log.warn("Product attribute not found with id: {}", id);
                     return new RuntimeException("Product attribute not found with id: " + id);
                 });
-        
+
         if (dto.groupId() != null) {
             ProductAttributeGroup group = attributeGroupRepository.findById(dto.groupId())
                     .orElseThrow(() -> {
@@ -101,11 +101,11 @@ public class ProductAttributeServiceImpl implements ProductAttributeService {
                     });
             attribute.setProductAttributeGroup(group);
         }
-        
+
         attributeMapper.updateEntity(attribute, dto);
         ProductAttribute updated = attributeRepository.save(attribute);
         log.info("Product attribute updated with id: {}", updated.getId());
-        
+
         return attributeMapper.toDTO(updated);
     }
 

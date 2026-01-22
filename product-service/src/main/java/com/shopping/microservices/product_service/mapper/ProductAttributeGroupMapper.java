@@ -55,7 +55,7 @@ public class ProductAttributeGroupMapper {
     public ProductAttributeGroupDTO toDTO(ProductAttributeGroup group, List<ProductAttribute> attributes) {
         if (group == null) return null;
 
-        List<ProductAttributeDTO> attributeDTOs = attributes != null 
+        List<ProductAttributeDTO> attributeDTOs = attributes != null
                 ? attributes.stream().map(attributeMapper::toDTO).collect(Collectors.toList())
                 : Collections.emptyList();
 
