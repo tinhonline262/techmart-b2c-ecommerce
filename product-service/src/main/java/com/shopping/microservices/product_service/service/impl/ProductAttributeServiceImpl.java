@@ -1,117 +1,125 @@
 package com.shopping.microservices.product_service.service.impl;
 
 import com.shopping.microservices.product_service.dto.PageResponseDTO;
+import com.shopping.microservices.product_service.dto.ProductAttributeCreationDTO;
 import com.shopping.microservices.product_service.dto.ProductAttributeDTO;
+import com.shopping.microservices.product_service.dto.ProductAttributeUpdateDTO;
 import com.shopping.microservices.product_service.entity.ProductAttribute;
-import com.shopping.microservices.product_service.exception.ProductAttributeNotFoundException;
+import com.shopping.microservices.product_service.entity.ProductAttributeGroup;
 import com.shopping.microservices.product_service.mapper.ProductAttributeMapper;
+import com.shopping.microservices.product_service.repository.ProductAttributeGroupRepository;
 import com.shopping.microservices.product_service.repository.ProductAttributeRepository;
 import com.shopping.microservices.product_service.service.ProductAttributeService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
-@Log4j2
+@Transactional
+@AllArgsConstructor
+@Slf4j
 public class ProductAttributeServiceImpl implements ProductAttributeService {
 
-    private final ProductAttributeRepository productAttributeRepository;
-    private final ProductAttributeMapper productAttributeMapper;
+    private final ProductAttributeRepository attributeRepository;
+    private final ProductAttributeGroupRepository attributeGroupRepository;
+    private final ProductAttributeMapper attributeMapper;
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponseDTO<ProductAttributeDTO> getAllAttributes(Pageable pageable) {
-        log.info("Fetching all product attributes with pagination: page={}, size={}", pageable.getPageNumber(),
-                pageable.getPageSize());
+    public PageResponseDTO<ProductAttributeDTO> getAttributes(Pageable pageable) {
+        log.info("Fetching product attributes with pagination: {}", pageable);
+        Page<ProductAttribute> page = attributeRepository.findAll(pageable);
 
-        Page<ProductAttributeDTO> page = productAttributeRepository.findAll(pageable)
-                .map(productAttributeMapper::toDTO);
-
-        log.info("Found {} product attributes", page.getTotalElements());
+        var dtos = page.getContent().stream()
+                .map(attributeMapper::toDTO)
+                .toList();
 
         return new PageResponseDTO<>(
-                page.getContent(),
+                dtos,
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages(),
                 page.isFirst(),
                 page.isLast(),
-                page.isEmpty());
+                page.isEmpty()
+        );
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductAttributeDTO getAttributeById(Long id) {
-        log.info("Fetching product attribute with ID: {}", id);
-
-        ProductAttribute attribute = productAttributeRepository.findById(id)
+        log.info("Fetching product attribute with id: {}", id);
+        return attributeRepository.findById(id)
+                .map(attributeMapper::toDTO)
                 .orElseThrow(() -> {
-                    log.error("Product attribute not found with ID: {}", id);
-                    return new ProductAttributeNotFoundException("Product attribute not found with ID: " + id);
+                    log.warn("Product attribute not found with id: {}", id);
+                    return new RuntimeException("Product attribute not found with id: " + id);
                 });
-
-        return productAttributeMapper.toDTO(attribute);
     }
 
     @Override
     @Transactional
-    public ProductAttributeDTO createAttribute(ProductAttributeDTO dto) {
-        log.info("Creating new product attribute with name: {}", dto.name());
+    public ProductAttributeDTO createAttribute(ProductAttributeCreationDTO dto) {
+        log.info("Creating product attribute: {}", dto.name());
 
-        if (productAttributeRepository.existsByName(dto.name())) {
-            log.error("Product attribute with name already exists: {}", dto.name());
-            throw new IllegalArgumentException("Product attribute with name '" + dto.name() + "' already exists");
+        ProductAttributeGroup group = null;
+        if (dto.groupId() != null) {
+            group = attributeGroupRepository.findById(dto.groupId())
+                    .orElseThrow(() -> {
+                        log.warn("Product attribute group not found with id: {}", dto.groupId());
+                        return new RuntimeException("Product attribute group not found with id: " + dto.groupId());
+                    });
         }
 
-        ProductAttribute attribute = productAttributeMapper.toEntity(dto);
-        ProductAttribute savedAttribute = productAttributeRepository.save(attribute);
+        ProductAttribute attribute = attributeMapper.toEntity(dto, group);
+        ProductAttribute saved = attributeRepository.save(attribute);
+        log.info("Product attribute created with id: {}", saved.getId());
 
-        log.info("Product attribute created successfully with ID: {}", savedAttribute.getId());
-
-        return productAttributeMapper.toDTO(savedAttribute);
+        return attributeMapper.toDTO(saved);
     }
 
     @Override
     @Transactional
-    public ProductAttributeDTO updateAttribute(Long id, ProductAttributeDTO dto) {
-        log.info("Updating product attribute with ID: {}", id);
+    public ProductAttributeDTO updateAttribute(Long id, ProductAttributeUpdateDTO dto) {
+        log.info("Updating product attribute with id: {}", id);
 
-        ProductAttribute attribute = productAttributeRepository.findById(id)
+        ProductAttribute attribute = attributeRepository.findById(id)
                 .orElseThrow(() -> {
-                    log.error("Product attribute not found with ID: {}", id);
-                    return new ProductAttributeNotFoundException("Product attribute not found with ID: " + id);
+                    log.warn("Product attribute not found with id: {}", id);
+                    return new RuntimeException("Product attribute not found with id: " + id);
                 });
 
-        if (!attribute.getName().equals(dto.name()) && productAttributeRepository.existsByName(dto.name())) {
-            log.error("Product attribute with name already exists: {}", dto.name());
-            throw new IllegalArgumentException("Product attribute with name '" + dto.name() + "' already exists");
+        if (dto.groupId() != null) {
+            ProductAttributeGroup group = attributeGroupRepository.findById(dto.groupId())
+                    .orElseThrow(() -> {
+                        log.warn("Product attribute group not found with id: {}", dto.groupId());
+                        return new RuntimeException("Product attribute group not found with id: " + dto.groupId());
+                    });
+            attribute.setProductAttributeGroup(group);
         }
 
-        productAttributeMapper.updateEntity(dto, attribute);
-        ProductAttribute updatedAttribute = productAttributeRepository.save(attribute);
+        attributeMapper.updateEntity(attribute, dto);
+        ProductAttribute updated = attributeRepository.save(attribute);
+        log.info("Product attribute updated with id: {}", updated.getId());
 
-        log.info("Product attribute updated successfully with ID: {}", updatedAttribute.getId());
-
-        return productAttributeMapper.toDTO(updatedAttribute);
+        return attributeMapper.toDTO(updated);
     }
 
     @Override
     @Transactional
     public void deleteAttribute(Long id) {
-        log.info("Deleting product attribute with ID: {}", id);
+        log.info("Deleting product attribute with id: {}", id);
 
-        if (!productAttributeRepository.existsById(id)) {
-            log.error("Product attribute not found with ID: {}", id);
-            throw new ProductAttributeNotFoundException("Product attribute not found with ID: " + id);
+        if (!attributeRepository.existsById(id)) {
+            log.warn("Product attribute not found with id: {}", id);
+            throw new RuntimeException("Product attribute not found with id: " + id);
         }
 
-        productAttributeRepository.deleteById(id);
-
-        log.info("Product attribute deleted successfully with ID: {}", id);
+        attributeRepository.deleteById(id);
+        log.info("Product attribute deleted with id: {}", id);
     }
 }

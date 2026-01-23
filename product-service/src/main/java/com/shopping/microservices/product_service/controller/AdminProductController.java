@@ -2,19 +2,22 @@ package com.shopping.microservices.product_service.controller;
 
 import com.shopping.microservices.product_service.dto.*;
 import com.shopping.microservices.product_service.repository.*;
+import com.shopping.microservices.product_service.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 /**
  * Admin Product Controller
- * Handles all administrative operations for products, inventory, attributes, attribute groups, and options.
+ * Handles all administrative operations for products and options.
  * Base path: /api/v1/products
  */
 @RestController
@@ -22,11 +25,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminProductController {
 
-    private final ProductRepository productRepository;
-    private final ProductImageRepository productImageRepository;
-    private final ProductOptionRepository productOptionRepository;
-    private final ProductOptionValueRepository productOptionValueRepository;
-    private final ProductOptionCombinationRepository productOptionCombinationRepository;
+    private final ProductService productService;
+    private final ProductOptionService productOptionService;
+    private final ProductOptionValueService productOptionValueService;
+    private final ProductAttributeService productAttributeService;
+    private final ProductAttributeValueService productAttributeValueService;
+    private final ProductAttributeGroupService productAttributeGroupService;
 
     // ================================
     // PRODUCT CRUD OPERATIONS
@@ -128,8 +132,9 @@ public class AdminProductController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ApiResponse<ProductDTO>> createProduct(
             @Valid @RequestBody ProductCreationDTO productCreationDTO) {
+        var created = productService.createProduct(productCreationDTO);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(null, "Product created successfully"));
+                .body(ApiResponse.created(created, "Product created successfully"));
     }
 
     /**
@@ -140,7 +145,8 @@ public class AdminProductController {
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductDTO>> getProductById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product retrieved successfully"));
+        var product = productService.findById(id);
+        return ResponseEntity.ok(ApiResponse.success(product, "Product retrieved successfully"));
     }
 
     /**
@@ -153,7 +159,8 @@ public class AdminProductController {
     public ResponseEntity<ApiResponse<ProductDTO>> updateProduct(
             @PathVariable Long id,
             @Valid @RequestBody ProductUpdateDTO productUpdateDTO) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product updated successfully"));
+        var updated = productService.updateProduct(id, productUpdateDTO);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Product updated successfully"));
     }
 
     /**
@@ -164,6 +171,7 @@ public class AdminProductController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long id) {
+        productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -181,7 +189,8 @@ public class AdminProductController {
     public ResponseEntity<ApiResponse<ProductDTO>> updateProductQuantity(
             @PathVariable Long id,
             @Valid @RequestBody InventoryUpdateDTO inventoryUpdateDTO) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product quantity updated successfully"));
+        var updated = productService.updateProductQuantity(id, inventoryUpdateDTO);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Product quantity updated successfully"));
     }
 
     /**
@@ -194,7 +203,8 @@ public class AdminProductController {
     public ResponseEntity<ApiResponse<ProductDTO>> subtractProductQuantity(
             @PathVariable Long id,
             @Valid @RequestBody InventorySubtractDTO inventorySubtractDTO) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product quantity subtracted successfully"));
+        var updated = productService.subtractProductQuantity(id, inventorySubtractDTO);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Product quantity subtracted successfully"));
     }
 
     // ================================
@@ -210,7 +220,8 @@ public class AdminProductController {
     @GetMapping("/attributes")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<PageResponseDTO<ProductAttributeDTO>>> getAttributes(Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product attributes retrieved successfully"));
+        var result = productAttributeService.getAttributes(pageable);
+        return ResponseEntity.ok(ApiResponse.success(result, "Product attributes retrieved successfully"));
     }
 
     /**
@@ -221,7 +232,8 @@ public class AdminProductController {
     @GetMapping("/attributes/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductAttributeDTO>> getAttributeById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product attribute retrieved successfully"));
+        var result = productAttributeService.getAttributeById(id);
+        return ResponseEntity.ok(ApiResponse.success(result, "Product attribute retrieved successfully"));
     }
 
     /**
@@ -233,8 +245,9 @@ public class AdminProductController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ApiResponse<ProductAttributeDTO>> createAttribute(
             @Valid @RequestBody ProductAttributeCreationDTO attributeCreationDTO) {
+        var result = productAttributeService.createAttribute(attributeCreationDTO);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(null, "Product attribute created successfully"));
+                .body(ApiResponse.created(result, "Product attribute created successfully"));
     }
 
     /**
@@ -247,7 +260,8 @@ public class AdminProductController {
     public ResponseEntity<ApiResponse<ProductAttributeDTO>> updateAttribute(
             @PathVariable Long id,
             @Valid @RequestBody ProductAttributeUpdateDTO attributeUpdateDTO) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product attribute updated successfully"));
+        var result = productAttributeService.updateAttribute(id, attributeUpdateDTO);
+        return ResponseEntity.ok(ApiResponse.success(result, "Product attribute updated successfully"));
     }
 
     /**
@@ -258,7 +272,21 @@ public class AdminProductController {
     @DeleteMapping("/attributes/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<ApiResponse<Void>> deleteAttribute(@PathVariable Long id) {
+        productAttributeService.deleteAttribute(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Get product attribute values by attribute ID.
+     * 
+     * GET /api/v1/products/attribute-values?attributeId=1
+     */
+    @GetMapping("/attribute-values")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<ApiResponse<List<ProductAttributeValueDTO>>> getAttributeValues(
+            @RequestParam Long attributeId) {
+        var result = productAttributeValueService.getAttributeValues(attributeId);
+        return ResponseEntity.ok(ApiResponse.success(result, "Product attribute values retrieved successfully"));
     }
 
     // ================================
@@ -274,7 +302,8 @@ public class AdminProductController {
     @GetMapping("/attribute-groups")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<PageResponseDTO<ProductAttributeGroupDTO>>> getAttributeGroups(Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product attribute groups retrieved successfully"));
+        var result = productAttributeGroupService.getAttributeGroups(pageable);
+        return ResponseEntity.ok(ApiResponse.success(result, "Product attribute groups retrieved successfully"));
     }
 
     /**
@@ -285,7 +314,8 @@ public class AdminProductController {
     @GetMapping("/attribute-groups/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductAttributeGroupDTO>> getAttributeGroupById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product attribute group retrieved successfully"));
+        var result = productAttributeGroupService.getAttributeGroupById(id);
+        return ResponseEntity.ok(ApiResponse.success(result, "Product attribute group retrieved successfully"));
     }
 
     /**
@@ -297,8 +327,9 @@ public class AdminProductController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ApiResponse<ProductAttributeGroupDTO>> createAttributeGroup(
             @Valid @RequestBody ProductAttributeGroupCreationDTO attributeGroupCreationDTO) {
+        var result = productAttributeGroupService.createAttributeGroup(attributeGroupCreationDTO);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(null, "Product attribute group created successfully"));
+                .body(ApiResponse.created(result, "Product attribute group created successfully"));
     }
 
     /**
@@ -311,7 +342,8 @@ public class AdminProductController {
     public ResponseEntity<ApiResponse<ProductAttributeGroupDTO>> updateAttributeGroup(
             @PathVariable Long id,
             @Valid @RequestBody ProductAttributeGroupUpdateDTO attributeGroupUpdateDTO) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product attribute group updated successfully"));
+        var result = productAttributeGroupService.updateAttributeGroup(id, attributeGroupUpdateDTO);
+        return ResponseEntity.ok(ApiResponse.success(result, "Product attribute group updated successfully"));
     }
 
     /**
@@ -322,6 +354,7 @@ public class AdminProductController {
     @DeleteMapping("/attribute-groups/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<ApiResponse<Void>> deleteAttributeGroup(@PathVariable Long id) {
+        productAttributeGroupService.deleteAttributeGroup(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -338,7 +371,8 @@ public class AdminProductController {
     @GetMapping("/options")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<PageResponseDTO<ProductOptionDTO>>> getOptions(Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product options retrieved successfully"));
+        var options = productOptionService.getOptions(pageable);
+        return ResponseEntity.ok(ApiResponse.success(options, "Product options retrieved successfully"));
     }
 
     /**
@@ -349,7 +383,8 @@ public class AdminProductController {
     @GetMapping("/options/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductOptionDTO>> getOptionById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product option retrieved successfully"));
+        var option = productOptionService.getOptionById(id);
+        return ResponseEntity.ok(ApiResponse.success(option, "Product option retrieved successfully"));
     }
 
     /**
@@ -361,8 +396,9 @@ public class AdminProductController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ApiResponse<ProductOptionDTO>> createOption(
             @Valid @RequestBody ProductOptionCreationDTO optionCreationDTO) {
+        var created = productOptionService.createOption(optionCreationDTO);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(null, "Product option created successfully"));
+                .body(ApiResponse.created(created, "Product option created successfully"));
     }
 
     /**
@@ -375,7 +411,8 @@ public class AdminProductController {
     public ResponseEntity<ApiResponse<ProductOptionDTO>> updateOption(
             @PathVariable Long id,
             @Valid @RequestBody ProductOptionUpdateDTO optionUpdateDTO) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product option updated successfully"));
+        var updated = productOptionService.updateOption(id, optionUpdateDTO);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Product option updated successfully"));
     }
 
     /**
@@ -386,6 +423,7 @@ public class AdminProductController {
     @DeleteMapping("/options/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<ApiResponse<Void>> deleteOption(@PathVariable Long id) {
+        productOptionService.deleteOption(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -402,6 +440,10 @@ public class AdminProductController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<ProductOptionValueDTO>>> getOptionValues(
             @RequestParam(required = false) Long optionId) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product option values retrieved successfully"));
+        if (optionId == null) {
+            throw new IllegalArgumentException("optionId parameter is required");
+        }
+        var values = productOptionValueService.getOptionValues(optionId);
+        return ResponseEntity.ok(ApiResponse.success(values, "Product option values retrieved successfully"));
     }
 }

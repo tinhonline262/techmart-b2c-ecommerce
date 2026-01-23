@@ -1,26 +1,14 @@
 package com.shopping.microservices.product_service.service.impl;
 
-import com.shopping.microservices.product_service.dto.ProductCreationDTO;
-import com.shopping.microservices.product_service.dto.ProductDTO;
-import com.shopping.microservices.product_service.dto.ProductSummaryDTO;
-import com.shopping.microservices.product_service.dto.FeaturedProductDTO;
-import com.shopping.microservices.product_service.dto.ProductDetailDTO;
-import com.shopping.microservices.product_service.dto.ProductVariationDTO;
-import com.shopping.microservices.product_service.dto.ProductRelatedDTO;
-import com.shopping.microservices.product_service.dto.ProductOptionValueDTO;
-import com.shopping.microservices.product_service.dto.ProductOptionCombinationDTO;
+import com.shopping.microservices.product_service.dto.*;
 import com.shopping.microservices.product_service.exception.CategoryNotFoundException;
 import com.shopping.microservices.product_service.exception.ProductNotFoundException;
 import com.shopping.microservices.product_service.mapper.ProductMapper;
 import com.shopping.microservices.product_service.mapper.ProductOptionCombinationMapper;
 import com.shopping.microservices.product_service.mapper.ProductRelatedMapper;
 import com.shopping.microservices.product_service.mapper.ProductOptionValueMapper;
-import com.shopping.microservices.product_service.repository.CategoryRepository;
-import com.shopping.microservices.product_service.repository.ProductCategoryRepository;
-import com.shopping.microservices.product_service.repository.ProductRepository;
-import com.shopping.microservices.product_service.repository.ProductOptionCombinationRepository;
-import com.shopping.microservices.product_service.repository.ProductRelatedRepository;
-import com.shopping.microservices.product_service.repository.ProductOptionValueRepository;
+import com.shopping.microservices.product_service.entity.ProductCategory;
+import com.shopping.microservices.product_service.repository.*;
 import com.shopping.microservices.product_service.service.ProductService;
 
 import lombok.AllArgsConstructor;
@@ -44,104 +32,142 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductCategoryRepository productCategoryRepository;
-    private final ProductMapper productMapper;
     private final ProductOptionCombinationRepository productOptionCombinationRepository;
-    private final ProductOptionCombinationMapper productOptionCombinationMapper;
+    private final ProductImageRepository productImageRepository;
+    private final ProductMapper productMapper;
     private final ProductRelatedRepository productRelatedRepository;
+    private final ProductOptionCombinationMapper productOptionCombinationMapper;
     private final ProductRelatedMapper productRelatedMapper;
     private final ProductOptionValueRepository productOptionValueRepository;
     private final ProductOptionValueMapper productOptionValueMapper;
 
-    // @Cacheable(value = "productById", key = "#id")
-    // @Transactional(readOnly = true)
-    // public ProductDTO findById(long id) {
-    // log.info("Finding product by id: {}", id);
-    // var productFound = productRepository.findById(id)
-    // .map(productMapper::mapToDTO)
-    // .orElseThrow(() -> new ProductNotFoundException("Product not found: " + id));
-    // log.info("Product found: {}", productFound.name());
-    // return productFound;
-    // }
-    //
-    // @Cacheable(value = "productBySku", key = "#sku")
-    // @Override
-    // @Transactional(readOnly = true)
-    // public ProductDTO findBySku(String sku) {
-    // log.info("Finding product by SKU: {}", sku);
-    // var productFound = productRepository.findBySku(sku)
-    // .map(productMapper::mapToDTO)
-    // .orElseThrow(() -> new ProductNotFoundException("Product not found with SKU:
-    // " + sku));
-    // log.info("Product found: {}", productFound.sku());
-    // return productFound;
-    // }
-    //
-    // @Cacheable(value = "products_all")
-    // public List<ProductDTO> findAll() {
-    // log.info("Finding all products");
-    // var products = productRepository.findAll().stream()
-    // .map(productMapper::mapToDTO)
-    // .collect(Collectors.toList());
-    // log.info("Products found: {}", products.size());
-    // return products;
-    // }
-    //
-    // @Override
-    // @Transactional
-    // @CacheEvict(value = "products_all", allEntries = true)
-    // public ProductDTO createProduct(ProductCreationDTO productCreationDTO) {
-    // log.info("Creating product: {}", productCreationDTO.name());
-    // var categoryOfProduct =
-    // categoryRepository.findById(productCreationDTO.categoryId())
-    // .orElseThrow(() -> new CategoryNotFoundException("Category not found: " +
-    // productCreationDTO.categoryId()));
-    // var product = productMapper.mapToEntity(productCreationDTO,
-    // categoryOfProduct);
-    // var savedProduct = productRepository.save(product);
-    // log.info("Product created: {}", savedProduct.getId());
-    // return productMapper.mapToDTO(savedProduct);
-    // }
-    //
-    // @Override
-    // @Transactional
-    // @CacheEvict(value = {"productBySku", "products_all"}, allEntries = true)
-    // public ProductDTO reverseProductStockBySku(ProductReduceStockDTO productDTO)
-    // {
-    // log.info("Reversing product by SKU: {}", productDTO.sku());
-    // var product = productRepository.findBySku(productDTO.sku())
-    // .orElseThrow(() -> new ProductNotFoundException("Product not found with SKU:
-    // " + productDTO.sku()));
-    // productRepository.save(product);
-    // log.info("Product stock reversed for SKU: {}", productDTO.sku());
-    // return null;
-    // }
-
-    @Override
+    @Cacheable(value = "productById", key = "#id")
     @Transactional(readOnly = true)
     public ProductDTO findById(long id) {
         log.info("Finding product by id: {}", id);
-        throw new UnsupportedOperationException("Method not implemented");
+        var productFound = productRepository.findById(id)
+                .map(productMapper::toDTO)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found: " + id));
+        log.info("Product found: {}", productFound.id());
+        return productFound;
     }
 
+    @Cacheable(value = "productBySku", key = "#sku")
     @Override
     @Transactional(readOnly = true)
     public ProductDTO findBySku(String sku) {
         log.info("Finding product by SKU: {}", sku);
-        throw new UnsupportedOperationException("Method not implemented");
+        var productFound = productRepository.findBySku(sku)
+                .map(productMapper::toDTO)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with SKU: " + sku));
+        log.info("Product found: {}", productFound.sku());
+        return productFound;
     }
 
-    @Override
-    @Transactional(readOnly = true)
+    @Cacheable(value = "products_all")
     public List<ProductDTO> findAll() {
         log.info("Finding all products");
-        throw new UnsupportedOperationException("Method not implemented");
+        var products = productRepository.findAll().stream()
+                .map(productMapper::toDTO)
+                .collect(Collectors.toList());
+        log.info("Products found: {}", products.size());
+        return products;
     }
 
     @Override
     @Transactional
+    @CacheEvict(value = "products_all", allEntries = true)
     public ProductDTO createProduct(ProductCreationDTO productCreationDTO) {
         log.info("Creating product: {}", productCreationDTO.name());
-        throw new UnsupportedOperationException("Method not implemented");
+        var product = productMapper.toEntity(productCreationDTO);
+        var savedProduct = productRepository.save(product);
+
+        // Link categories if any
+        if (productCreationDTO.categoryIds() != null && !productCreationDTO.categoryIds().isEmpty()) {
+            productCreationDTO.categoryIds().forEach(categoryId -> {
+                var category = categoryRepository.findById(categoryId)
+                        .orElseThrow(() -> new CategoryNotFoundException(categoryId));
+                var pc = ProductCategory.builder()
+                        .product(savedProduct)
+                        .category(category)
+                        .build();
+                productCategoryRepository.save(pc);
+            });
+        }
+
+        // Images: creation DTO currently contains image URLs; mapping to existing product_image table requires image IDs.
+        if (productCreationDTO.images() != null && !productCreationDTO.images().isEmpty()) {
+            log.warn("Product images provided but image persistence by URL is not implemented; skipping images for product {}", savedProduct.getId());
+        }
+
+        log.info("Product created: {}", savedProduct.getId());
+        return productMapper.toDTO(savedProduct);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"productBySku", "products_all"}, allEntries = true)
+    public ProductDTO reverseProductStockBySku(ProductReduceStockDTO productDTO) {
+        log.info("Reversing product stock by SKU: {}", productDTO.sku());
+        var product = productRepository.findBySku(productDTO.sku())
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with SKU: " + productDTO.sku()));
+
+        var current = product.getStockQuantity() != null ? product.getStockQuantity() : 0L;
+        product.setStockQuantity(current + productDTO.quantity());
+        productRepository.save(product);
+
+        log.info("Product stock reversed for SKU: {} by quantity {}", productDTO.sku(), productDTO.quantity());
+        return productMapper.toDTO(product);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"productBySku", "products_all"}, allEntries = true)
+    public ProductDTO updateProduct(Long id, ProductUpdateDTO productUpdateDTO) {
+        var product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found: " + id));
+        productMapper.updateEntity(product, productUpdateDTO);
+        var saved = productRepository.save(product);
+        return productMapper.toDTO(saved);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"productBySku", "products_all"}, allEntries = true)
+    public void deleteProduct(Long id) {
+        var product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found: " + id));
+        productRepository.delete(product);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"productBySku", "products_all"}, allEntries = true)
+    public ProductDTO updateProductQuantity(Long id, InventoryUpdateDTO inventoryUpdateDTO) {
+        var product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found: " + id));
+        product.setStockQuantity(Long.valueOf(inventoryUpdateDTO.quantity()));
+        var saved = productRepository.save(product);
+        return productMapper.toDTO(saved);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"productBySku", "products_all"}, allEntries = true)
+    public ProductDTO subtractProductQuantity(Long id, InventorySubtractDTO inventorySubtractDTO) {
+        var product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found: " + id));
+
+        if (Boolean.TRUE.equals(product.getStockTrackingEnabled())) {
+            var current = product.getStockQuantity() != null ? product.getStockQuantity() : 0L;
+            if (current < inventorySubtractDTO.quantity()) {
+                throw new IllegalArgumentException("Insufficient stock for product: " + id);
+            }
+            product.setStockQuantity(current - inventorySubtractDTO.quantity());
+        }
+
+        var saved = productRepository.save(product);
+        return productMapper.toDTO(saved);
     }
 
     @Override
@@ -171,9 +197,6 @@ public class ProductServiceImpl implements ProductService {
         return products.map(productMapper::toSummaryDTO);
     }
 
-    /**
-     * Build Specification for dynamic filtering of published products
-     */
     private Specification<com.shopping.microservices.product_service.entity.Product> buildProductSpecification(
             List<Long> categoryIds,
             List<Long> brandIds,
@@ -189,17 +212,11 @@ public class ProductServiceImpl implements ProductService {
                 .and(inStock != null && inStock ? hasStock() : null);
     }
 
-    /**
-     * Specification: Product must be published
-     */
-    private Specification<com.shopping.microservices.product_service.entity.Product> isPublished() {
+     private Specification<com.shopping.microservices.product_service.entity.Product> isPublished() {
         return (root, query, cb) -> cb.isTrue(root.get("isPublished"));
     }
 
-    /**
-     * Specification: Product must belong to one of the specified categories
-     */
-    private Specification<com.shopping.microservices.product_service.entity.Product> inCategories(
+     private Specification<com.shopping.microservices.product_service.entity.Product> inCategories(
             List<Long> categoryIds) {
         return (root, query, cb) -> {
             // Use a subquery to find products that belong to the specified categories
@@ -214,16 +231,10 @@ public class ProductServiceImpl implements ProductService {
         };
     }
 
-    /**
-     * Specification: Product must have one of the specified brands
-     */
-    private Specification<com.shopping.microservices.product_service.entity.Product> inBrands(List<Long> brandIds) {
+     private Specification<com.shopping.microservices.product_service.entity.Product> inBrands(List<Long> brandIds) {
         return (root, query, cb) -> root.get("brandId").in(brandIds);
     }
 
-    /**
-     * Specification: Product price must be greater than or equal to minPrice
-     */
     private Specification<com.shopping.microservices.product_service.entity.Product> priceGreaterThanOrEqual(
             BigDecimal minPrice) {
         return (root, query, cb) -> cb.ge(root.get("price"), minPrice);
@@ -243,7 +254,6 @@ public class ProductServiceImpl implements ProductService {
     private Specification<com.shopping.microservices.product_service.entity.Product> hasStock() {
         return (root, query, cb) -> cb.gt(root.get("stockQuantity"), 0L);
     }
-
     @Override
     @Transactional(readOnly = true)
     public List<FeaturedProductDTO> findFeaturedProducts(int limit) {

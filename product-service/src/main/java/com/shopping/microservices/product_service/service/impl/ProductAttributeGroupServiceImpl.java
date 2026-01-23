@@ -1,60 +1,115 @@
 package com.shopping.microservices.product_service.service.impl;
 
 import com.shopping.microservices.product_service.dto.PageResponseDTO;
+import com.shopping.microservices.product_service.dto.ProductAttributeGroupCreationDTO;
 import com.shopping.microservices.product_service.dto.ProductAttributeGroupDTO;
+import com.shopping.microservices.product_service.dto.ProductAttributeGroupUpdateDTO;
 import com.shopping.microservices.product_service.entity.ProductAttributeGroup;
-import com.shopping.microservices.product_service.exception.ProductNotFoundException;
 import com.shopping.microservices.product_service.mapper.ProductAttributeGroupMapper;
 import com.shopping.microservices.product_service.repository.ProductAttributeGroupRepository;
+import com.shopping.microservices.product_service.repository.ProductAttributeRepository;
 import com.shopping.microservices.product_service.service.ProductAttributeGroupService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
-@Log4j2
+@Transactional
+@AllArgsConstructor
+@Slf4j
 public class ProductAttributeGroupServiceImpl implements ProductAttributeGroupService {
 
+    private final ProductAttributeGroupRepository attributeGroupRepository;
+    private final ProductAttributeRepository attributeRepository;
+    private final ProductAttributeGroupMapper attributeGroupMapper;
     private final ProductAttributeGroupRepository productAttributeGroupRepository;
     private final ProductAttributeGroupMapper productAttributeGroupMapper;
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponseDTO<ProductAttributeGroupDTO> getAllAttributeGroups(Pageable pageable) {
-        log.info("Fetching all product attribute groups with pagination: page={}, size={}",
-                pageable.getPageNumber(), pageable.getPageSize());
+    public PageResponseDTO<ProductAttributeGroupDTO> getAttributeGroups(Pageable pageable) {
+        log.info("Fetching product attribute groups with pagination: {}", pageable);
+        Page<ProductAttributeGroup> page = attributeGroupRepository.findAll(pageable);
 
-        Page<ProductAttributeGroupDTO> page = productAttributeGroupRepository.findAll(pageable)
-                .map(productAttributeGroupMapper::toDTO);
-
-        log.info("Found {} product attribute groups", page.getTotalElements());
+        var dtos = page.getContent().stream()
+                .map(group -> {
+                    var attributes = attributeRepository.findByProductAttributeGroupId(group.getId());
+                    return attributeGroupMapper.toDTO(group, attributes);
+                })
+                .toList();
 
         return new PageResponseDTO<>(
-                page.getContent(),
+                dtos,
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages(),
                 page.isFirst(),
                 page.isLast(),
-                page.isEmpty());
+                page.isEmpty()
+        );
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductAttributeGroupDTO getAttributeGroupById(Long id) {
-        log.info("Fetching product attribute group with ID: {}", id);
-
-        ProductAttributeGroup group = productAttributeGroupRepository.findById(id)
+        log.info("Fetching product attribute group with id: {}", id);
+        return attributeGroupRepository.findById(id)
+                .map(group -> {
+                    var attributes = attributeRepository.findByProductAttributeGroupId(group.getId());
+                    return attributeGroupMapper.toDTO(group, attributes);
+                })
                 .orElseThrow(() -> {
-                    log.error("Product attribute group not found with ID: {}", id);
-                    return new ProductNotFoundException("Product attribute group not found with ID: " + id);
+                    log.warn("Product attribute group not found with id: {}", id);
+                    return new RuntimeException("Product attribute group not found with id: " + id);
+                });
+    }
+
+    @Override
+    @Transactional
+    public ProductAttributeGroupDTO createAttributeGroup(ProductAttributeGroupCreationDTO dto) {
+        log.info("Creating product attribute group: {}", dto.name());
+
+        ProductAttributeGroup attributeGroup = attributeGroupMapper.toEntity(dto);
+        ProductAttributeGroup saved = attributeGroupRepository.save(attributeGroup);
+        log.info("Product attribute group created with id: {}", saved.getId());
+
+        return attributeGroupMapper.toDTO(saved, null);
+    }
+
+    @Override
+    @Transactional
+    public ProductAttributeGroupDTO updateAttributeGroup(Long id, ProductAttributeGroupUpdateDTO dto) {
+        log.info("Updating product attribute group with id: {}", id);
+
+        ProductAttributeGroup attributeGroup = attributeGroupRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Product attribute group not found with id: {}", id);
+                    return new RuntimeException("Product attribute group not found with id: " + id);
                 });
 
-        return productAttributeGroupMapper.toDTO(group);
+        attributeGroupMapper.updateEntity(attributeGroup, dto);
+        ProductAttributeGroup updated = attributeGroupRepository.save(attributeGroup);
+        log.info("Product attribute group updated with id: {}", updated.getId());
+
+        var attributes = attributeRepository.findByProductAttributeGroupId(updated.getId());
+        return attributeGroupMapper.toDTO(updated, attributes);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAttributeGroup(Long id) {
+        log.info("Deleting product attribute group with id: {}", id);
+
+        if (!attributeGroupRepository.existsById(id)) {
+            log.warn("Product attribute group not found with id: {}", id);
+            throw new RuntimeException("Product attribute group not found with id: " + id);
+        }
+
+        attributeGroupRepository.deleteById(id);
+        log.info("Product attribute group deleted with id: {}", id);
     }
 }
