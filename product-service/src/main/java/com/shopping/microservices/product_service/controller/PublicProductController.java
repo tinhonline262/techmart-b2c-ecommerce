@@ -188,7 +188,7 @@ public class PublicProductController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<PageResponseDTO<ProductAttributeDTO>>> getAttributes(Pageable pageable) {
         log.info("Fetching product attributes for public API");
-        PageResponseDTO<ProductAttributeDTO> attributes = productAttributeService.getAllAttributes(pageable);
+        PageResponseDTO<ProductAttributeDTO> attributes = productAttributeService.getAttributes(pageable);
         return ResponseEntity.ok(ApiResponse.success(attributes, "Product attributes retrieved successfully"));
     }
 
@@ -203,7 +203,7 @@ public class PublicProductController {
     public ResponseEntity<ApiResponse<PageResponseDTO<ProductAttributeGroupDTO>>> getAttributeGroups(
             Pageable pageable) {
         log.info("Fetching product attribute groups for public API");
-        PageResponseDTO<ProductAttributeGroupDTO> groups = productAttributeGroupService.getAllAttributeGroups(pageable);
+        PageResponseDTO<ProductAttributeGroupDTO> groups = productAttributeGroupService.getAttributeGroups(pageable);
         return ResponseEntity.ok(ApiResponse.success(groups, "Product attribute groups retrieved successfully"));
     }
 

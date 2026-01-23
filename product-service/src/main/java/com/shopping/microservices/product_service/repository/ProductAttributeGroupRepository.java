@@ -11,5 +11,6 @@ import java.util.Optional;
 public interface ProductAttributeGroupRepository extends JpaRepository<ProductAttributeGroup, Long>, JpaSpecificationExecutor<ProductAttributeGroup> {
     boolean existsByName(String name);
     Optional<ProductAttributeGroup> findByNameIgnoreCase(String name);
+    Optional<ProductAttributeGroup> findByName(String name);
 }
 

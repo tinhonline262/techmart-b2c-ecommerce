@@ -25,6 +25,8 @@ public class ProductAttributeGroupServiceImpl implements ProductAttributeGroupSe
     private final ProductAttributeGroupRepository attributeGroupRepository;
     private final ProductAttributeRepository attributeRepository;
     private final ProductAttributeGroupMapper attributeGroupMapper;
+    private final ProductAttributeGroupRepository productAttributeGroupRepository;
+    private final ProductAttributeGroupMapper productAttributeGroupMapper;
 
     @Override
     @Transactional(readOnly = true)

@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @Slf4j
 public class ProductAttributeValueServiceImpl implements ProductAttributeValueService {
-    
+
     private final ProductAttributeValueRepository attributeValueRepository;
     private final ProductAttributeValueMapper attributeValueMapper;
 
@@ -25,7 +25,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     @Transactional(readOnly = true)
     public List<ProductAttributeValueDTO> getAttributeValues(Long attributeId) {
         log.info("Fetching product attribute values for attribute id: {}", attributeId);
-        
+
         return attributeValueRepository.findByProductAttributeId(attributeId).stream()
                 .map(attributeValueMapper::toDTO)
                 .collect(Collectors.toList());
