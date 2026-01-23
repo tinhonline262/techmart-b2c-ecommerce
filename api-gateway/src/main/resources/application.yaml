@@ -6,60 +6,59 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-        routes:
-            - id: product-service
-              uri: lb://product-service
-              predicates:
-                - Path=/api/v1/products/**,
-                  /api/v1/categories/**,
-                  /api/v1/brands/**,
-                  /api/v1/public/brands/**,
-                  /api/v1/public/categories/**
-              filters:
-                - AuthenticationFilter
+      routes:
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/v1/products/**,/api/v1/categories/**,/api/v1/brands/**,/api/v1/public/brands/**,/api/v1/public/categories/**
+          filters:
+            - AuthenticationFilter
 
-            - id: order-service
-              uri: lb://order-service
-              predicates:
-                - Path=/api/v1/orders/**
-              filters:
-                - AuthenticationFilter
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/v1/orders/**
+          filters:
+            - AuthenticationFilter
 
-            - id: notification-service
-              uri: lb://notification-service
-              predicates:
-                - Path=/api/v1/notification/**
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/notification/**
 
-            - id: identity-service-auth
-              uri: lb://identity-service
-              predicates:
-                - Path=/api/v1/auth/**
+        - id: identity-service-auth
+          uri: lb://identity-service
+          predicates:
+            - Path=/api/v1/auth/**
 
-            - id: identity-service-user
-              uri: lb://identity-service
-              predicates:
-                  - Path=/api/v1/user/**
-              filters:
-                - AuthenticationFilter
-            - id: inventory-service
-              uri: lb://inventory-service
-              predicates:
-                - Path=/api/v1/inventory/**
+        - id: identity-service-user
+          uri: lb://identity-service
+          predicates:
+            - Path=/api/v1/user/**
+          filters:
+            - AuthenticationFilter
 
-            - id: payment-service
-              uri: lb://payment-service
-              predicates:
-                - Path=/api/v1/payments/**
+        - id: inventory-service
+          uri: lb://inventory-service
+          predicates:
+            - Path=/api/v1/inventory/**
 
-            - id: cart-service
-              uri: lb://cart-service
-              predicates:
-                - Path=/api/v1/public/carts/**
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/payments/**
 
-            - id: customer-service
-              uri: lb://customer-service
-              predicates:
-                - Path=/api/v1/customers/**
+        - id: customer-service-public
+          uri: lb://customer-service
+          predicates:
+            - Path=/api/v1/public/customer/**
+
+        - id: customer-service-admin
+          uri: lb://customer-service
+          predicates:
+            - Path=/api/v1/customers/**
+#          filters:
+#            - AuthenticationFilter
 
 # Actuator Configuration (for Prometheus)
 management:
@@ -85,10 +84,12 @@ management:
     metrics:
       export:
         enabled: true
+
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka
+
 identity:
   jwt:
     secret-key: ${JWT_SECRET_KEY:cb3f30b0ec715f1bcbead50dc9d77786c038b569f2f6adb9a9e724e07ffd6c17}
