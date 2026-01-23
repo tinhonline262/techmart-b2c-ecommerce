@@ -41,7 +41,7 @@ CREATE TABLE inventory_transactions (
 -- Create reserved_orders table to track inventory reservations during order process
 CREATE TABLE reserved_orders (
                                  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                 order_id VARCHAR(100) NOT NULL,
+                                 order_id BIGINT NOT NULL,
                                  product_id BIGINT NOT NULL,
                                  sku VARCHAR(100) NOT NULL,
                                  warehouse_id BIGINT NOT NULL,

@@ -1,6 +1,7 @@
 package com.shopping.microservices.common_library.event;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.shopping.microservices.common_library.kafka.BaseEvent;
 import lombok.*;
 
 import java.math.BigDecimal;

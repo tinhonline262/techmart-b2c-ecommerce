@@ -223,4 +223,14 @@ public final class IdempotencyUtil {
             throw new RuntimeException("SHA-256 algorithm not available", e);
         }
     }
+
+    /**
+     * Generate unique order number (non-sequential)
+     * Format: ORD-8charUUID
+     */
+    public static String generateOrderNumber() {
+        String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+        return "ORD-" + uuid;
+    }
+
 }

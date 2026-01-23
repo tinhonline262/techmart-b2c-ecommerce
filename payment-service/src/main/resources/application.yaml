@@ -91,7 +91,6 @@ logging:
         benmanes:
           caffeine: TRACE
 
-
 identity:
   jwt:
     secret-key: ${JWT_SECRET_KEY:cb3f30b0ec715f1bcbead50dc9d77786c038b569f2f6adb9a9e724e07ffd6c17}
@@ -100,3 +99,42 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka
+
+# Payment Gateway Configuration
+payment:
+  # Payment expiry timeout in minutes
+  expiry:
+    minutes: 30
+
+  # VNPay Configuration
+  vnpay:
+    tmn-code: ${VNPAY_TMN_CODE:DEMO_TMN}
+    hash-secret: ${VNPAY_HASH_SECRET:DEMO_SECRET}
+    api-url: ${VNPAY_API_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+    return-url: ${VNPAY_RETURN_URL:http://localhost:8080/api/v1/payments/callback/vnpay}
+
+  # MoMo Configuration
+  momo:
+    partner-code: ${MOMO_PARTNER_CODE:MOMO_DEMO}
+    access-key: ${MOMO_ACCESS_KEY:DEMO_ACCESS_KEY}
+    secret-key: ${MOMO_SECRET_KEY:DEMO_SECRET_KEY}
+    api-url: ${MOMO_API_URL:https://test-payment.momo.vn}
+    return-url: ${MOMO_RETURN_URL:http://localhost:8080/payment/result}
+    ipn-url: ${MOMO_IPN_URL:http://localhost:8088/api/v1/payments/callback/momo}
+
+  # PayPal Configuration
+  paypal:
+    client-id: ${PAYPAL_CLIENT_ID:DEMO_CLIENT_ID}
+    client-secret: ${PAYPAL_CLIENT_SECRET:DEMO_CLIENT_SECRET}
+    api-url: ${PAYPAL_API_URL:https://api-m.sandbox.paypal.com}
+    return-url: ${PAYPAL_RETURN_URL:http://localhost:8080/payment/success}
+    cancel-url: ${PAYPAL_CANCEL_URL:http://localhost:8080/payment/cancel}
+    webhook-id: ${PAYPAL_WEBHOOK_ID:}
+    vnd-to-usd-rate: ${PAYPAL_VND_TO_USD_RATE:24000}
+
+  # COD Configuration
+  cod:
+    enabled: true
+    max-amount: 10000000
+    min-amount: 10000
+    service-fee: 0

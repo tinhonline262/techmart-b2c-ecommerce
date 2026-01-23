@@ -1,6 +1,8 @@
 package com.shopping.microservices.inventory_service.service.impl;
 
+import com.shopping.microservices.inventory_service.entity.Inventory;
 import com.shopping.microservices.inventory_service.exception.OutOfStockException;
+import com.shopping.microservices.inventory_service.exception.ProductNotFoundException;
 import com.shopping.microservices.inventory_service.repository.InventoryRepository;
 import com.shopping.microservices.inventory_service.service.InventoryService;
 import com.shopping.microservices.inventory_service.service.InventoryTransactionService;
@@ -8,6 +10,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -33,58 +39,6 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public void reserveStock(String sku, Long quantity) {
-        log.info("Reserving stock for sku {}", sku);
-        inventoryRepository.findInventoryBySku(sku).ifPresent(inventory -> {
-            Long currentQuantity = inventory.getQuantity() != null ? inventory.getQuantity() : 0L;
-            if (currentQuantity < quantity) {
-                log.warn("Insufficient stock to reserve for sku {}. Available: {}, Requested: {}",
-                    sku, currentQuantity, quantity);
-                throw new OutOfStockException("Insufficient stock to reserve for sku " + sku);
-            }
-            Long updatedQuantity = currentQuantity - quantity;
-            inventory.setQuantity(updatedQuantity);
-
-            Long currentReserved = inventory.getReservedQuantity() != null ? inventory.getReservedQuantity() : 0L;
-            Long reservedQuantity = currentReserved + quantity;
-            inventory.setReservedQuantity(reservedQuantity);
-
-            inventoryRepository.save(inventory);
-            log.info("Stock reserved for sku {}. New available quantity: {}, Reserved: {}",
-                sku, updatedQuantity, reservedQuantity);
-
-            // Create transaction history
-            inventoryTransactionService.createInventoryTransaction(inventory, -quantity, "Stock reserved for sku: " + sku);
-        });
-    }
-
-    @Override
-    public void releaseStock(String sku, Long quantity) {
-        log.info("Releasing stock for sku {}", sku);
-        inventoryRepository.findInventoryBySku(sku).ifPresent(inventory -> {
-            Long currentReserved = inventory.getReservedQuantity() != null ? inventory.getReservedQuantity() : 0L;
-            if (currentReserved < quantity) {
-                log.warn("Insufficient reserved stock to release for sku {}. Reserved: {}, Requested: {}",
-                    sku, currentReserved, quantity);
-                throw new OutOfStockException("Insufficient reserved stock to release for sku " + sku);
-            }
-            Long updatedReservedQuantity = currentReserved - quantity;
-            inventory.setReservedQuantity(updatedReservedQuantity);
-
-            Long currentQuantity = inventory.getQuantity() != null ? inventory.getQuantity() : 0L;
-            Long updatedQuantity = currentQuantity + quantity;
-            inventory.setQuantity(updatedQuantity);
-
-            inventoryRepository.save(inventory);
-            log.info("Stock released for sku {}. New available quantity: {}, Reserved: {}",
-                sku, updatedQuantity, updatedReservedQuantity);
-
-            // Create transaction history
-            inventoryTransactionService.createInventoryTransaction(inventory, quantity, "Stock released for sku: " + sku);
-        });
-    }
-
-    @Override
     public void updateProductQuantity(Long productId, Long warehouseId, Long adjustedQuantity, String note) {
         log.info("Updating product quantity for productId: {}, warehouseId: {}", productId, warehouseId);
 
@@ -106,5 +60,41 @@ public class InventoryServiceImpl implements InventoryService {
                 inventoryTransactionService.createInventoryTransaction(inventory, adjustedQuantity, note);
             }
         });
+    }
+
+    @Override
+    public Map<String, Inventory> findAndLockBySkus(List<String> skus) {
+        return inventoryRepository.findBySkuInWithLock(skus).stream()
+                .collect(Collectors.toMap(Inventory::getSku, inv -> inv));
+    }
+
+    @Override
+    public Inventory findAndLockByProductId(Long productId) {
+        return inventoryRepository.findByProductIdWithLock(productId)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found: " + productId));
+    }
+
+    @Override
+    public long getAvailableQuantity(Inventory inventory) {
+        return inventory.getQuantity() - inventory.getReservedQuantity();
+    }
+
+    @Override
+    public void incrementReservedQuantity(Inventory inventory, int quantity) {
+        inventory.setReservedQuantity(inventory.getReservedQuantity() + quantity);
+        inventoryRepository.save(inventory);
+    }
+
+    @Override
+    public void decrementReservedQuantity(Inventory inventory, long quantity) {
+        inventory.setReservedQuantity(inventory.getReservedQuantity() - quantity);
+        inventoryRepository.save(inventory);
+    }
+
+    @Override
+    public void confirmReservation(Inventory inventory, long reservedQuantity) {
+        inventory.setQuantity(inventory.getQuantity() - reservedQuantity);
+        inventory.setReservedQuantity(inventory.getReservedQuantity() - reservedQuantity);
+        inventoryRepository.save(inventory);
     }
 }

@@ -1,29 +1,27 @@
 package com.shopping.microservices.inventory_service.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shopping.microservices.common_library.constants.KafkaTopics;
 import com.shopping.microservices.common_library.event.InventoryEvent;
 import com.shopping.microservices.common_library.event.OrderEvent;
+import com.shopping.microservices.common_library.event.PaymentEvent;
 import com.shopping.microservices.common_library.kafka.EventPublisher;
+import com.shopping.microservices.inventory_service.dto.ReservationContext;
 import com.shopping.microservices.inventory_service.entity.Inventory;
-import com.shopping.microservices.inventory_service.entity.InventoryTransaction;
 import com.shopping.microservices.inventory_service.entity.ReservedOrder;
-import com.shopping.microservices.inventory_service.entity.Warehouse;
-import com.shopping.microservices.inventory_service.repository.InventoryRepository;
-import com.shopping.microservices.inventory_service.repository.InventoryTransactionRepository;
-import com.shopping.microservices.inventory_service.repository.ReservedOrderRepository;
-import com.shopping.microservices.inventory_service.repository.WarehouseRepository;
-import com.shopping.microservices.inventory_service.service.ReservationService;
-import jakarta.inject.Qualifier;
+import com.shopping.microservices.inventory_service.exception.InsufficientInventoryException;
+import com.shopping.microservices.inventory_service.exception.InventoryReservationException;
+import com.shopping.microservices.inventory_service.exception.ProductNotFoundException;
+import com.shopping.microservices.inventory_service.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,13 +29,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ReservationServiceImpl implements ReservationService {
 
-    private final InventoryRepository inventoryRepository;
-    private final ReservedOrderRepository reservedOrderRepository;
-    private final WarehouseRepository warehouseRepository;
-    private final InventoryTransactionRepository inventoryTransactionRepository;
+    private final InventoryService inventoryService;
+    private final ReservedOrderService reservedOrderService;
+    private final WarehouseService warehouseService;
+    private final InventoryTransactionService inventoryTransactionService;
     private final EventPublisher eventPublisher;
-
-
 
     private static final String SERVICE_NAME = "inventory-service";
     private static final int RESERVATION_EXPIRY_MINUTES = 30;
@@ -47,140 +43,128 @@ public class ReservationServiceImpl implements ReservationService {
     public void reserveInventory(OrderEvent orderEvent) {
         log.info("Processing inventory reservation for order: {}", orderEvent.getOrderNumber());
 
-        List<ReservedOrder> reservations = new ArrayList<>();
-        List<InventoryEvent.ReservationData> reservationDataList = new ArrayList<>();
-        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(RESERVATION_EXPIRY_MINUTES);
-
         try {
-            for (OrderEvent.OrderItemData item : orderEvent.getItems()) {
-                // Lock inventory record for concurrent access
-                Inventory inventory = inventoryRepository.findBySkuWithLock(item.getSku())
-                        .orElseThrow(() -> new RuntimeException("Product not found: " + item.getSku()));
-
-                long availableQuantity = inventory.getQuantity() - inventory.getReservedQuantity();
-
-                if (availableQuantity < item.getQuantity()) {
-                    log.warn("Insufficient inventory for SKU: {}. Available: {}, Requested: {}",
-                            item.getSku(), availableQuantity, item.getQuantity());
-
-                    rollbackReservations(reservations);
-                    publishInsufficientEvent(orderEvent, item, availableQuantity);
-                    return;
-                }
-
-                // Increment reserved quantity
-                inventory.setReservedQuantity(inventory.getReservedQuantity() + item.getQuantity());
-                inventoryRepository.save(inventory);
-
-                // Create reservation record
-                ReservedOrder reservation = ReservedOrder.builder()
-                        .orderId(orderEvent.getOrderNumber())
-                        .productId(item.getProductId())
-                        .sku(item.getSku())
-                        .warehouseId(inventory.getWarehouseId())
-                        .reservedQuantity(item.getQuantity().longValue())
-                        .status(ReservedOrder.ReservationStatus.RESERVED)
-                        .expiresAt(expiresAt)
-                        .build();
-
-                reservedOrderRepository.save(reservation);
-                reservations.add(reservation);
-
-                // Build reservation data for event
-                String warehouseName = warehouseRepository.findById(inventory.getWarehouseId())
-                        .map(Warehouse::getName).orElse("Unknown");
-
-                reservationDataList.add(InventoryEvent.ReservationData.builder()
-                        .productId(item.getProductId())
-                        .sku(item.getSku())
-                        .quantity(item.getQuantity())
-                        .warehouseId(inventory.getWarehouseId())
-                        .warehouseName(warehouseName)
-                        .availableQuantity(availableQuantity - item.getQuantity())
-                        .build());
-
-                log.info("Reserved {} units of SKU: {} for order: {}",
-                        item.getQuantity(), item.getSku(), orderEvent.getOrderNumber());
-            }
-
-            // Publish success event
-            InventoryEvent event = InventoryEvent.inventoryReserved(SERVICE_NAME, orderEvent.getOrderId(), reservationDataList);
-            event.setOrderNumber(orderEvent.getOrderNumber());
-            event.setCorrelationId(orderEvent.getCorrelationId());
-            eventPublisher.publish(KafkaTopics.INVENTORY_EVENTS, event);
-
+            ReservationContext context = performReservation(orderEvent);
+            publishSuccessEvent(orderEvent, context);
             log.info("Successfully reserved inventory for order: {}", orderEvent.getOrderNumber());
+
+        } catch (InsufficientInventoryException e) {
+            log.warn("Insufficient inventory for order: {}", orderEvent.getOrderNumber(), e);
+            publishInsufficientEvent(orderEvent, e);
 
         } catch (Exception e) {
             log.error("Error reserving inventory for order: {}", orderEvent.getOrderNumber(), e);
-            rollbackReservations(reservations);
-            throw e;
+            throw new InventoryReservationException("Failed to reserve inventory", e);
         }
+    }
+
+    @Transactional
+    protected ReservationContext performReservation(OrderEvent orderEvent) {
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(RESERVATION_EXPIRY_MINUTES);
+
+        // Batch fetch inventories
+        List<String> skus = orderEvent.getItems().stream()
+                .map(OrderEvent.OrderItemData::getSku)
+                .toList();
+
+        Map<String, Inventory> inventoryMap = inventoryService.findAndLockBySkus(skus);
+        List<ReservationContext.ReservationResult> results = new ArrayList<>();
+
+        for (OrderEvent.OrderItemData item : orderEvent.getItems()) {
+            Inventory inventory = inventoryMap.get(item.getSku());
+
+            if (inventory == null) {
+                throw new ProductNotFoundException("Product not found: " + item.getSku());
+            }
+
+            long availableQuantity = inventoryService.getAvailableQuantity(inventory);
+
+            if (availableQuantity < item.getQuantity()) {
+                throw new InsufficientInventoryException(
+                        item.getSku(),
+                        item.getProductId(),
+                        item.getQuantity(),
+                        availableQuantity
+                );
+            }
+
+            // Reserve inventory
+            inventoryService.incrementReservedQuantity(inventory, item.getQuantity());
+
+            // Create reservation
+            ReservedOrder reservation = reservedOrderService.createReservation(
+                    orderEvent.getOrderId(),
+                    item,
+                    inventory.getWarehouseId(),
+                    expiresAt
+            );
+            results.add(ReservationContext.ReservationResult.builder()
+                            .reservation(reservation)
+                            .inventory(inventory)
+                            .requestedQuantity(item.getQuantity())
+                            .availableAfterReservation(availableQuantity - item.getQuantity())
+                    .build());
+
+            log.info("Reserved {} units of SKU: {} for order: {}",
+                    item.getQuantity(), item.getSku(), orderEvent.getOrderNumber());
+        }
+
+        return new ReservationContext(results);
     }
 
     @Override
     @Transactional
-    public void confirmReservation(String orderId) {
-        log.info("Confirming reservation for order: {}", orderId);
+    public void confirmReservation(PaymentEvent paymentEvent) {
+        log.info("Confirming reservation for order: {}", paymentEvent.getOrderId());
 
-        List<ReservedOrder> reservations = reservedOrderRepository
-                .findByOrderIdAndStatus(orderId, ReservedOrder.ReservationStatus.RESERVED);
+        List<ReservedOrder> reservations = reservedOrderService
+                .findActiveReservations(paymentEvent.getOrderId());
 
         if (reservations.isEmpty()) {
-            log.warn("No active reservations found for order: {}", orderId);
+            log.warn("No active reservations found for order: {}", paymentEvent.getOrderId());
             return;
         }
 
         List<InventoryEvent.ReservationData> confirmedItems = new ArrayList<>();
 
         for (ReservedOrder reservation : reservations) {
-            // Lock and update inventory
-            Inventory inventory = inventoryRepository.findByProductIdWithLock(reservation.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Product not found: " + reservation.getProductId()));
+            Inventory inventory = inventoryService.findAndLockByProductId(reservation.getProductId());
 
             // Deduct actual quantity and decrease reserved
-            inventory.setQuantity(inventory.getQuantity() - reservation.getReservedQuantity());
-            inventory.setReservedQuantity(inventory.getReservedQuantity() - reservation.getReservedQuantity());
-            inventoryRepository.save(inventory);
+            inventoryService.confirmReservation(inventory, reservation.getReservedQuantity());
 
             // Update reservation status
-            reservation.setStatus(ReservedOrder.ReservationStatus.CONFIRMED);
-            reservedOrderRepository.save(reservation);
+            reservedOrderService.confirmReservation(reservation);
 
             // Create transaction record
-            Warehouse warehouse = warehouseRepository.findById(inventory.getWarehouseId()).orElse(null);
-            InventoryTransaction transaction = InventoryTransaction.builder()
-                    .productId(reservation.getProductId())
-                    .adjustedQuantity(-reservation.getReservedQuantity())
-                    .note("Order confirmed: " + orderId)
-                    .warehouse(warehouse)
-                    .build();
-            inventoryTransactionRepository.save(transaction);
+            inventoryTransactionService.createInventoryTransaction(
+                    inventory,
+                    -reservation.getReservedQuantity(),
+                    "Order confirmed: " + paymentEvent.getOrderNumber()
+            );
 
-            confirmedItems.add(InventoryEvent.ReservationData.builder()
-                    .productId(reservation.getProductId())
-                    .sku(reservation.getSku())
-                    .quantity(reservation.getReservedQuantity().intValue())
-                    .warehouseId(reservation.getWarehouseId())
-                    .build());
+            confirmedItems.add(buildReservationData(reservation));
 
-            log.info("Confirmed reservation for order: {}, product: {}", orderId, reservation.getProductId());
+            log.info("Confirmed reservation for order: {}, product: {}",
+                    paymentEvent.getOrderId(), reservation.getProductId());
         }
 
         // Publish confirmation event
-        InventoryEvent event = new InventoryEvent(InventoryEvent.InventoryEventType.INVENTORY_CONFIRMED, SERVICE_NAME);
-        event.setOrderNumber(orderId);
-        event.setReservations(confirmedItems);
+        InventoryEvent event = InventoryEvent.inventoryConfirmed(
+                SERVICE_NAME,
+                paymentEvent.getOrderId(),
+                paymentEvent.getOrderNumber(),
+                confirmedItems
+        );
         eventPublisher.publish(KafkaTopics.INVENTORY_EVENTS, event);
     }
 
     @Override
     @Transactional
-    public void releaseReservations(String orderId) {
+    public void releaseReservations(Long orderId) {
         log.info("Releasing reservations for order: {}", orderId);
 
-        List<ReservedOrder> reservations = reservedOrderRepository
-                .findByOrderIdAndStatus(orderId, ReservedOrder.ReservationStatus.RESERVED);
+        List<ReservedOrder> reservations = reservedOrderService.findActiveReservations(orderId);
 
         if (reservations.isEmpty()) {
             log.info("No active reservations to release for order: {}", orderId);
@@ -190,31 +174,27 @@ public class ReservationServiceImpl implements ReservationService {
         List<InventoryEvent.ReservationData> releasedItems = new ArrayList<>();
 
         for (ReservedOrder reservation : reservations) {
-            // Lock and update inventory - return stock to available
-            Inventory inventory = inventoryRepository.findByProductIdWithLock(reservation.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Product not found: " + reservation.getProductId()));
+            Inventory inventory = inventoryService.findAndLockByProductId(reservation.getProductId());
 
-            inventory.setReservedQuantity(inventory.getReservedQuantity() - reservation.getReservedQuantity());
-            inventoryRepository.save(inventory);
+            // Release reserved quantity
+            inventoryService.decrementReservedQuantity(inventory, reservation.getReservedQuantity());
 
             // Update reservation status
-            reservation.setStatus(ReservedOrder.ReservationStatus.CANCELLED);
-            reservedOrderRepository.save(reservation);
+            reservedOrderService.cancelReservation(reservation);
 
-            releasedItems.add(InventoryEvent.ReservationData.builder()
-                    .productId(reservation.getProductId())
-                    .sku(reservation.getSku())
-                    .quantity(reservation.getReservedQuantity().intValue())
-                    .warehouseId(reservation.getWarehouseId())
-                    .build());
+            releasedItems.add(buildReservationData(reservation));
 
             log.info("Released reservation for order: {}, product: {}, quantity: {}",
                     orderId, reservation.getProductId(), reservation.getReservedQuantity());
         }
 
-        // Publish release event (SAGA compensation)
-        InventoryEvent event = InventoryEvent.inventoryReleased(SERVICE_NAME, null, releasedItems, "Order cancelled or payment failed");
-        event.setOrderNumber(orderId);
+        // Publish release event
+        InventoryEvent event = InventoryEvent.inventoryReleased(
+                SERVICE_NAME,
+                orderId,
+                releasedItems,
+                "Order cancelled or payment failed"
+        );
         eventPublisher.publish(KafkaTopics.INVENTORY_EVENTS, event);
     }
 
@@ -223,51 +203,85 @@ public class ReservationServiceImpl implements ReservationService {
     public void processExpiredReservations() {
         log.info("Processing expired reservations");
 
-        List<ReservedOrder> expiredReservations = reservedOrderRepository
-                .findExpiredReservations(ReservedOrder.ReservationStatus.RESERVED, LocalDateTime.now());
+        List<Long> expiredOrderIds = reservedOrderService.findExpiredOrderIds(LocalDateTime.now());
 
-        // Group by orderId and release
-        expiredReservations.stream()
-                .map(ReservedOrder::getOrderId)
-                .distinct()
-                .forEach(orderId -> {
-                    log.info("Releasing expired reservations for order: {}", orderId);
-                    releaseReservations(orderId);
-                });
+        expiredOrderIds.forEach(orderId -> {
+            log.info("Releasing expired reservations for order: {}", orderId);
+            releaseReservations(orderId);
+        });
 
-        log.info("Processed {} expired reservations", expiredReservations.size());
+        log.info("Processed {} expired orders", expiredOrderIds.size());
     }
 
-    private void rollbackReservations(List<ReservedOrder> reservations) {
-        for (ReservedOrder reservation : reservations) {
-            try {
-                Inventory inventory = inventoryRepository.findByProductId(reservation.getProductId()).orElse(null);
-                if (inventory != null) {
-                    inventory.setReservedQuantity(inventory.getReservedQuantity() - reservation.getReservedQuantity());
-                    inventoryRepository.save(inventory);
-                }
-                reservedOrderRepository.delete(reservation);
-                log.debug("Rolled back reservation for product: {}", reservation.getProductId());
-            } catch (Exception e) {
-                log.error("Error rolling back reservation: {}", reservation.getId(), e);
-            }
-        }
+    // ========== Helper Methods ==========
+
+    private void publishSuccessEvent(OrderEvent orderEvent, ReservationContext context) {
+        // Batch fetch warehouse names
+        Set<Long> warehouseIds = context.getResults().stream()
+                .map(r -> r.getInventory().getWarehouseId())
+                .collect(Collectors.toSet());
+
+        Map<Long, String> warehouseNames = warehouseService.getWarehouseNamesByIds(warehouseIds);
+
+        List<InventoryEvent.ReservationData> reservationDataList = context.getResults().stream()
+                .map(result -> buildReservationData(result, warehouseNames))
+                .toList();
+
+        InventoryEvent event = InventoryEvent.inventoryReserved(
+                SERVICE_NAME,
+                orderEvent.getOrderId(),
+                orderEvent.getOrderNumber(),
+                reservationDataList
+        );
+        event.setCorrelationId(orderEvent.getCorrelationId());
+        eventPublisher.publish(KafkaTopics.INVENTORY_EVENTS, event);
     }
 
-    private void publishInsufficientEvent(OrderEvent orderEvent, OrderEvent.OrderItemData item, long availableQuantity) {
+    private void publishInsufficientEvent(OrderEvent orderEvent, InsufficientInventoryException e) {
         List<InventoryEvent.ReservationData> insufficientItems = List.of(
                 InventoryEvent.ReservationData.builder()
-                        .productId(item.getProductId())
-                        .sku(item.getSku())
-                        .quantity(item.getQuantity())
-                        .availableQuantity(availableQuantity)
+                        .productId(e.getProductId())
+                        .sku(e.getSku())
+                        .quantity(e.getRequested())
+                        .availableQuantity(e.getAvailable())
                         .build()
         );
 
-        InventoryEvent event = InventoryEvent.inventoryInsufficient(SERVICE_NAME, orderEvent.getOrderId(), insufficientItems);
-        event.setOrderNumber(orderEvent.getOrderNumber());
+        InventoryEvent event = InventoryEvent.inventoryInsufficient(
+                SERVICE_NAME,
+                orderEvent.getOrderId(),
+                orderEvent.getOrderNumber(),
+                insufficientItems
+        );
         event.setCorrelationId(orderEvent.getCorrelationId());
-        event.setReason("Insufficient inventory for SKU: " + item.getSku());
+        event.setReason("Insufficient inventory for SKU: " + e.getSku());
         eventPublisher.publish(KafkaTopics.INVENTORY_EVENTS, event);
+    }
+
+    private InventoryEvent.ReservationData buildReservationData(
+           ReservationContext.ReservationResult result,
+            Map<Long, String> warehouseNames) {
+
+        ReservedOrder reservation = result.getReservation();
+        Inventory inventory = result.getInventory();
+
+        return InventoryEvent.ReservationData.builder()
+                .productId(reservation.getProductId())
+                .sku(reservation.getSku())
+                .quantity(result.getRequestedQuantity())
+                .warehouseId(inventory.getWarehouseId())
+                .warehouseName(warehouseNames.getOrDefault(
+                        inventory.getWarehouseId(), "Unknown"))
+                .availableQuantity(result.getAvailableAfterReservation())
+                .build();
+    }
+
+    private InventoryEvent.ReservationData buildReservationData(ReservedOrder reservation) {
+        return InventoryEvent.ReservationData.builder()
+                .productId(reservation.getProductId())
+                .sku(reservation.getSku())
+                .quantity(reservation.getReservedQuantity().intValue())
+                .warehouseId(reservation.getWarehouseId())
+                .build();
     }
 }

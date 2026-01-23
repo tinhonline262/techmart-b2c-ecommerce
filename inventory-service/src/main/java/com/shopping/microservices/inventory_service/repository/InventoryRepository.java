@@ -37,5 +37,14 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     boolean existsBySku(String sku);
     
     Optional<Inventory> findInventoryBySku(String sku);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT i FROM Inventory i WHERE i.sku IN :skus")
+    List<Inventory> findBySkuInWithLock(@Param("skus") List<String> skus);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT i FROM Inventory i WHERE i.productId = :productId")
+    Optional<Inventory> findByProductIdWithLock(@Param("productId") String productId);
+
 }
 

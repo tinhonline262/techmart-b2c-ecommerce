@@ -17,12 +17,12 @@ public interface ReservedOrderRepository extends JpaRepository<ReservedOrder, Lo
     /**
      * Find all reservations for a specific order
      */
-    List<ReservedOrder> findByOrderId(String orderId);
+    List<ReservedOrder> findByOrderId(Long orderId);
 
     /**
      * Find all reservations for a specific order with a given status
      */
-    List<ReservedOrder> findByOrderIdAndStatus(String orderId, ReservedOrder.ReservationStatus status);
+    List<ReservedOrder> findByOrderIdAndStatus(Long orderId, ReservedOrder.ReservationStatus status);
 
     /**
      * Find reservations for a specific product and status
@@ -59,7 +59,7 @@ public interface ReservedOrderRepository extends JpaRepository<ReservedOrder, Lo
     /**
      * Check if an order has active reservations
      */
-    boolean existsByOrderIdAndStatus(String orderId, ReservedOrder.ReservationStatus status);
+    boolean existsByOrderIdAndStatus(Long orderId, ReservedOrder.ReservationStatus status);
 
     /**
      * Get total reserved quantity for a product across all warehouses

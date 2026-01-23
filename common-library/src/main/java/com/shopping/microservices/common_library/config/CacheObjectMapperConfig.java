@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 /**
  * Common ObjectMapper configurations for cache serialization.
@@ -70,6 +71,7 @@ public class CacheObjectMapperConfig {
      * - General JSON operations
      */
     @Bean(name = "restObjectMapper")
+    @Primary
     public ObjectMapper restObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         

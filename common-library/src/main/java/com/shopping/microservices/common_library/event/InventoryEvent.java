@@ -1,6 +1,7 @@
 package com.shopping.microservices.common_library.event;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.shopping.microservices.common_library.kafka.BaseEvent;
 import lombok.*;
 
 import java.util.List;
@@ -122,10 +123,11 @@ public class InventoryEvent extends BaseEvent {
     /**
      * Static factory method for creating INVENTORY_RESERVED events
      */
-    public static InventoryEvent inventoryReserved(String source, Long orderId, 
+    public static InventoryEvent inventoryReserved(String source, Long orderId, String orderNumber,
                                                    List<ReservationData> reservations) {
         InventoryEvent event = new InventoryEvent(InventoryEventType.INVENTORY_RESERVED, source);
         event.setOrderId(orderId);
+        event.setOrderNumber(orderNumber);
         event.setReservations(reservations);
         return event;
     }
@@ -133,8 +135,21 @@ public class InventoryEvent extends BaseEvent {
     /**
      * Static factory method for creating INVENTORY_RELEASED events
      */
-    public static InventoryEvent inventoryReleased(String source, Long orderId, 
+    public static InventoryEvent inventoryReleased(String source, Long orderId, String orderNumber,
                                                    List<ReservationData> reservations, 
+                                                   String reason) {
+        InventoryEvent event = new InventoryEvent(InventoryEventType.INVENTORY_RELEASED, source);
+        event.setOrderId(orderId);
+        event.setOrderNumber(orderNumber);
+        event.setReservations(reservations);
+        event.setReason(reason);
+        return event;
+    }
+    /**
+     * Static factory method for creating INVENTORY_RELEASED events
+     */
+    public static InventoryEvent inventoryReleased(String source, Long orderId,
+                                                   List<ReservationData> reservations,
                                                    String reason) {
         InventoryEvent event = new InventoryEvent(InventoryEventType.INVENTORY_RELEASED, source);
         event.setOrderId(orderId);
@@ -144,11 +159,24 @@ public class InventoryEvent extends BaseEvent {
     }
 
     /**
+     * Static factory method for creating INVENTORY_CONFIRMED events
+     */
+    public static InventoryEvent inventoryConfirmed(String source, Long orderId, String orderNumber,
+                                                   List<ReservationData> reservations) {
+        InventoryEvent event = new InventoryEvent(InventoryEventType.INVENTORY_CONFIRMED, source);
+        event.setOrderId(orderId);
+        event.setOrderNumber(orderNumber);
+        event.setReservations(reservations);
+        return event;
+    }
+
+    /**
      * Static factory method for creating INVENTORY_INSUFFICIENT events
      */
-    public static InventoryEvent inventoryInsufficient(String source, Long orderId, 
+    public static InventoryEvent inventoryInsufficient(String source, Long orderId, String orderNumber,
                                                        List<ReservationData> reservations) {
         InventoryEvent event = new InventoryEvent(InventoryEventType.INVENTORY_INSUFFICIENT, source);
+        event.setOrderId(orderId);
         event.setOrderId(orderId);
         event.setReservations(reservations);
         return event;
