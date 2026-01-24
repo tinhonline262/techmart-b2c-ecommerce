@@ -1,5 +1,6 @@
 package com.shopping.microservices.product_service.controller;
 
+import com.shopping.microservices.product_service.client.InventoryServiceClient;
 import com.shopping.microservices.product_service.dto.*;
 import com.shopping.microservices.product_service.repository.*;
 import com.shopping.microservices.product_service.service.*;
@@ -13,7 +14,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Admin Product Controller
@@ -31,6 +34,7 @@ public class AdminProductController {
     private final ProductAttributeService productAttributeService;
     private final ProductAttributeValueService productAttributeValueService;
     private final ProductAttributeGroupService productAttributeGroupService;
+    private final InventoryServiceClient inventoryServiceClient;
 
     // ================================
     // PRODUCT CRUD OPERATIONS
@@ -58,8 +62,40 @@ public class AdminProductController {
             @RequestParam(required = false) Boolean isFeatured,
             @RequestParam(required = false) Boolean inStock,
             Pageable pageable) {
-        // Placeholder response
-        return ResponseEntity.ok(ApiResponse.success(null, "Products retrieved successfully"));
+        var allProducts = productService.findAll();
+        
+        // Apply filters
+        var filtered = allProducts.stream()
+                .filter(p -> ids == null || ids.isEmpty() || ids.contains(p.id()))
+                .filter(p -> categoryIds == null || categoryIds.isEmpty() || p.categoryIds() == null || !p.categoryIds().isEmpty())
+                .filter(p -> brandIds == null || brandIds.isEmpty() || brandIds.contains(p.brandId()))
+                .filter(p -> keyword == null || keyword.isEmpty() || p.name().toLowerCase().contains(keyword.toLowerCase()))
+                .filter(p -> minPrice == null || p.price().compareTo(minPrice) >= 0)
+                .filter(p -> maxPrice == null || p.price().compareTo(maxPrice) <= 0)
+                .filter(p -> isPublished == null || p.isPublished().equals(isPublished))
+                .filter(p -> isFeatured == null || p.isFeatured().equals(isFeatured))
+                .filter(p -> inStock == null || !inStock || (p.stockQuantity() != null && p.stockQuantity() > 0))
+                .toList();
+        
+        // Create paginated response
+        int pageNumber = pageable.getPageNumber();
+        int pageSize = pageable.getPageSize();
+        int start = pageNumber * pageSize;
+        int end = Math.min(start + pageSize, filtered.size());
+        
+        var pageContent = start < filtered.size() ? filtered.subList(start, end) : List.of();
+        var pageResponse = new PageResponseDTO<>(
+                pageContent,
+                pageNumber,
+                pageSize,
+                filtered.size(),
+                (filtered.size() + pageSize - 1) / pageSize,
+                pageNumber == 0,
+                end >= filtered.size(),
+                pageContent.isEmpty()
+        );
+        
+        return ResponseEntity.ok(ApiResponse.success(pageResponse, "Products retrieved successfully"));
     }
 
     /**
@@ -71,7 +107,11 @@ public class AdminProductController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<ProductDTO>>> getLatestProducts(
             @RequestParam(defaultValue = "10") int limit) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Latest products retrieved successfully"));
+        var allProducts = productService.findAll();
+        var latest = allProducts.stream()
+                .limit(limit)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(latest, "Latest products retrieved successfully"));
     }
 
     /**
@@ -90,7 +130,41 @@ public class AdminProductController {
             @RequestParam(required = false) Boolean inStock,
             @RequestParam(required = false) Boolean isPublished,
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Product search completed successfully"));
+        var allProducts = productService.findAll();
+        
+        // Apply search filters
+        var searched = allProducts.stream()
+                .filter(p -> keyword == null || keyword.isEmpty() || 
+                        p.name().toLowerCase().contains(keyword.toLowerCase()) ||
+                        (p.description() != null && p.description().toLowerCase().contains(keyword.toLowerCase())) ||
+                        (p.sku() != null && p.sku().toLowerCase().contains(keyword.toLowerCase())))
+                .filter(p -> categoryIds == null || categoryIds.isEmpty() || p.categoryIds() == null || !p.categoryIds().isEmpty())
+                .filter(p -> brandIds == null || brandIds.isEmpty() || brandIds.contains(p.brandId()))
+                .filter(p -> minPrice == null || p.price().compareTo(minPrice) >= 0)
+                .filter(p -> maxPrice == null || p.price().compareTo(maxPrice) <= 0)
+                .filter(p -> inStock == null || !inStock || (p.stockQuantity() != null && p.stockQuantity() > 0))
+                .filter(p -> isPublished == null || p.isPublished().equals(isPublished))
+                .toList();
+        
+        // Create paginated response
+        int pageNumber = pageable.getPageNumber();
+        int pageSize = pageable.getPageSize();
+        int start = pageNumber * pageSize;
+        int end = Math.min(start + pageSize, searched.size());
+        
+        var pageContent = start < searched.size() ? searched.subList(start, end) : List.of();
+        var pageResponse = new PageResponseDTO<>(
+                pageContent,
+                pageNumber,
+                pageSize,
+                searched.size(),
+                (searched.size() + pageSize - 1) / pageSize,
+                pageNumber == 0,
+                end >= searched.size(),
+                pageContent.isEmpty()
+        );
+        
+        return ResponseEntity.ok(ApiResponse.success(pageResponse, "Product search completed successfully"));
     }
 
     /**
@@ -105,7 +179,97 @@ public class AdminProductController {
             @RequestParam(required = false) Boolean lowStock,
             @RequestParam(required = false) Boolean outOfStock,
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Warehouse products retrieved successfully"));
+        try {
+            // Get inventory data from inventory-service
+            PageResponseDTO<WarehouseProductDTO> inventoryPage;
+            
+            if (outOfStock != null && outOfStock) {
+                var response = inventoryServiceClient.getOutOfStockInventory(pageable);
+                inventoryPage = convertInventoryToWarehouseProducts(response.getData());
+            } else if (lowStock != null && lowStock) {
+                var response = inventoryServiceClient.getLowStockInventory(pageable);
+                inventoryPage = convertInventoryToWarehouseProducts(response.getData());
+            } else {
+                var response = inventoryServiceClient.getAllInventory(pageable);
+                inventoryPage = convertInventoryToWarehouseProducts(response.getData());
+            }
+            
+            // Filter by SKU if provided
+            if (sku != null && !sku.isEmpty()) {
+                var filtered = inventoryPage.content().stream()
+                        .filter(p -> p.sku() != null && p.sku().toLowerCase().contains(sku.toLowerCase()))
+                        .toList();
+                var filteredResponse = new PageResponseDTO<>(
+                        filtered,
+                        inventoryPage.pageNumber(),
+                        inventoryPage.pageSize(),
+                        inventoryPage.totalElements(),
+                        inventoryPage.totalPages(),
+                        inventoryPage.isFirst(),
+                        inventoryPage.isLast(),
+                        filtered.isEmpty()
+                );
+                return ResponseEntity.ok(ApiResponse.success(filteredResponse, "Warehouse products retrieved successfully"));
+            }
+            
+            return ResponseEntity.ok(ApiResponse.success(inventoryPage, "Warehouse products retrieved successfully"));
+        } catch (Exception e) {
+            // Fallback: return empty response if inventory-service is unavailable
+            var emptyResponse = new PageResponseDTO<WarehouseProductDTO>(
+                    List.of(),
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    0,
+                    0,
+                    true,
+                    true,
+                    true
+            );
+            return ResponseEntity.ok(ApiResponse.success(emptyResponse, "Warehouse products retrieved successfully (inventory service unavailable)"));
+        }
+    }
+    
+    private PageResponseDTO<WarehouseProductDTO> convertInventoryToWarehouseProducts(PageResponseDTO<InventoryDTO> inventoryPage) {
+        var allProducts = productService.findAll();
+        
+        var warehouseProducts = inventoryPage.content().stream()
+                .map(inventory -> {
+                    var product = allProducts.stream()
+                            .filter(p -> p.id().equals(inventory.productId()))
+                            .findFirst();
+                    
+                    if (product.isPresent()) {
+                        var p = product.get();
+                        var availableQty = inventory.quantity() - inventory.reservedQuantity();
+                        return new WarehouseProductDTO(
+                                p.id(),
+                                p.name(),
+                                inventory.sku(),
+                                inventory.quantity().intValue(),
+                                inventory.reservedQuantity().intValue(),
+                                availableQty.intValue(),
+                                p.cost(),
+                                "Warehouse " + inventory.warehouseId(),
+                                inventory.quantity() <= 10,
+                                10,
+                                20
+                        );
+                    }
+                    return null;
+                })
+                .filter(p -> p != null)
+                .collect(Collectors.toList());
+        
+        return new PageResponseDTO<>(
+                warehouseProducts,
+                inventoryPage.pageNumber(),
+                inventoryPage.pageSize(),
+                inventoryPage.totalElements(),
+                inventoryPage.totalPages(),
+                inventoryPage.isFirst(),
+                inventoryPage.isLast(),
+                warehouseProducts.isEmpty()
+        );
     }
 
     /**
@@ -120,7 +284,48 @@ public class AdminProductController {
             @RequestParam(required = false) List<Long> categoryIds,
             @RequestParam(required = false) List<Long> brandIds,
             @RequestParam(defaultValue = "csv") String format) {
-        return ResponseEntity.ok(ApiResponse.success(null, "Products exported successfully"));
+        var allProducts = productService.findAll();
+        
+        // Apply filters
+        var filtered = allProducts.stream()
+                .filter(p -> ids == null || ids.isEmpty() || ids.contains(p.id()))
+                .filter(p -> categoryIds == null || categoryIds.isEmpty() || p.categoryIds() == null || !p.categoryIds().isEmpty())
+                .filter(p -> brandIds == null || brandIds.isEmpty() || brandIds.contains(p.brandId()))
+                .toList();
+        
+        // Generate CSV export
+        byte[] csvBytes = exportToCSV(filtered);
+        
+        return ResponseEntity.ok(ApiResponse.success(csvBytes, "Products exported successfully"));
+    }
+    
+    private byte[] exportToCSV(List<ProductDTO> products) {
+        StringBuilder csv = new StringBuilder();
+        
+        // CSV Header
+        csv.append("ID,Name,SKU,Price,Stock Quantity,Published,Featured,Brand ID,Cost\n");
+        
+        // CSV Data
+        for (ProductDTO product : products) {
+            csv.append(product.id()).append(",");
+            csv.append("\"").append(escapeCsvValue(product.name())).append("\",");
+            csv.append(product.sku() != null ? "\"" + escapeCsvValue(product.sku()) + "\"" : "\"\"").append(",");
+            csv.append(product.price()).append(",");
+            csv.append(product.stockQuantity() != null ? product.stockQuantity() : "0").append(",");
+            csv.append(product.isPublished()).append(",");
+            csv.append(product.isFeatured()).append(",");
+            csv.append(product.brandId() != null ? product.brandId() : "\"\"").append(",");
+            csv.append(product.cost()).append("\n");
+        }
+        
+        return csv.toString().getBytes(StandardCharsets.UTF_8);
+    }
+    
+    private String escapeCsvValue(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\"", "\"\"");
     }
 
     /**
