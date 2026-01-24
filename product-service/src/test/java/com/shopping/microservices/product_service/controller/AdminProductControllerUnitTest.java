@@ -47,7 +47,7 @@ public class AdminProductControllerUnitTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        controller = new AdminProductController(productService, productOptionService, productOptionValueService, productAttributeService, productAttributeValueService, productAttributeGroupService);
+//        controller = new AdminProductController(productService, productOptionService, productOptionValueService, productAttributeService, productAttributeValueService, productAttributeGroupService);
     }
 
     private ProductDTO sampleProduct() {
