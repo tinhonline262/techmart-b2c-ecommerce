@@ -46,4 +46,6 @@ public interface OrderService {
     void completeOrder(Long orderId, String message);
 
     void cancelOrder(Long orderId, String reason);
+
+    OrderResponse findOrderByCheckoutId(String checkoutId);
 }

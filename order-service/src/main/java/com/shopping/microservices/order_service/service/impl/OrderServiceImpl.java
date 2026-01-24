@@ -147,6 +147,14 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public OrderResponse findOrderByCheckoutId(String checkoutId) {
+        log.info("Finding order by checkoutId: {}", checkoutId);
+        Order order = orderRepository.findByCheckoutId(checkoutId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "checkoutId", checkoutId));
+        return orderMapper.toResponse(order);
+    }
+
+    @Override
     @Transactional
     public OrderResponse updateOrderPaymentStatus(UpdateOrderPaymentStatusRequest request) {
         log.info("Updating payment status for order: {}", request.orderId());

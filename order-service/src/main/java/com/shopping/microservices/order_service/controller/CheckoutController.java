@@ -45,16 +45,16 @@ public class CheckoutController {
      * PUT /api/v1/public/checkouts/status
      *
      * @param request the status update request
-     * @return updated checkout response
+     * @return the associated order ID
      */
     @PutMapping("/status")
-    public ResponseEntity<ApiResponse<CheckoutResponse>> updateCheckoutStatus(
+    public ResponseEntity<ApiResponse<Long>> updateCheckoutStatus(
             @Valid @RequestBody UpdateCheckoutStatusRequest request) {
-        CheckoutResponse response = checkoutService.updateCheckoutStatus(request);
+        Long orderId = checkoutService.updateCheckoutStatus(request);
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
                 "Checkout status updated successfully",
-                response
+                orderId
         ));
     }
 
@@ -82,17 +82,17 @@ public class CheckoutController {
      *
      * @param id      the checkout ID
      * @param request the payment method update request
-     * @return updated checkout response
+     * @return success message
      */
     @PutMapping("/{id}/payment-method")
-    public ResponseEntity<ApiResponse<CheckoutResponse>> updatePaymentMethod(
+    public ResponseEntity<ApiResponse<Void>> updatePaymentMethod(
             @PathVariable("id") String id,
             @Valid @RequestBody UpdatePaymentMethodRequest request) {
-        CheckoutResponse response = checkoutService.updatePaymentMethod(id, request);
+        checkoutService.updateCheckoutPaymentMethod(id, request);
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
                 "Payment method updated successfully",
-                response
+                null
         ));
     }
 }

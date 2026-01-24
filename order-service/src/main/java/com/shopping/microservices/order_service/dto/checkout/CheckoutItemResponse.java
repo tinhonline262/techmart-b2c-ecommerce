@@ -18,7 +18,6 @@ public record CheckoutItemResponse(
         BigDecimal shipmentTax,
         BigDecimal discountAmount,
         BigDecimal subtotal,
-        Instant createdAt,
-        Instant updatedAt
+        String checkoutId
 ) {
 }
