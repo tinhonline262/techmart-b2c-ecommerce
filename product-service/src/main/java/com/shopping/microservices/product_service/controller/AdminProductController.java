@@ -43,7 +43,7 @@ public class AdminProductController {
     /**
      * Get all products with pagination, filtering, and sorting.
      * Supports bulk queries by ids, categoryIds, brandIds.
-     * 
+     *
      * GET /api/v1/products
      * GET /api/v1/products?ids=1,2,3
      * GET /api/v1/products?categoryIds=1,2
@@ -63,44 +63,44 @@ public class AdminProductController {
             @RequestParam(required = false) Boolean inStock,
             Pageable pageable) {
         var allProducts = productService.findAll();
-        
+
         // Apply filters
         var filtered = allProducts.stream()
                 .filter(p -> ids == null || ids.isEmpty() || ids.contains(p.id()))
-                .filter(p -> categoryIds == null || categoryIds.isEmpty() || p.categoryIds() == null || !p.categoryIds().isEmpty())
-                .filter(p -> brandIds == null || brandIds.isEmpty() || brandIds.contains(p.brandId()))
+                .filter(p -> categoryIds == null || categoryIds.isEmpty() || (p.categories() != null && p.categories().stream().anyMatch(c -> categoryIds.contains(c.id()))))
+                .filter(p -> brandIds == null || brandIds.isEmpty() || brandIds.contains(p.brand().id()))
                 .filter(p -> keyword == null || keyword.isEmpty() || p.name().toLowerCase().contains(keyword.toLowerCase()))
                 .filter(p -> minPrice == null || p.price().compareTo(minPrice) >= 0)
                 .filter(p -> maxPrice == null || p.price().compareTo(maxPrice) <= 0)
-                .filter(p -> isPublished == null || p.isPublished().equals(isPublished))
-                .filter(p -> isFeatured == null || p.isFeatured().equals(isFeatured))
-                .filter(p -> inStock == null || !inStock || (p.stockQuantity() != null && p.stockQuantity() > 0))
+                .filter(p -> isPublished == null || p.isPublished() == isPublished)
+                .filter(p -> isFeatured == null || p.isFeatured() == isFeatured)
+                .filter(p -> inStock == null || (inStock && p.stockQuantity() != null && p.stockQuantity() > 0) || (!inStock && (p.stockQuantity() == null || p.stockQuantity() <= 0)))
                 .toList();
-        
+
         // Create paginated response
         int pageNumber = pageable.getPageNumber();
         int pageSize = pageable.getPageSize();
         int start = pageNumber * pageSize;
         int end = Math.min(start + pageSize, filtered.size());
-        
-        var pageContent = start < filtered.size() ? filtered.subList(start, end) : List.of();
+
+        List<ProductDTO> pageContent = start < filtered.size() ? filtered.subList(start, end) : List.of();
         var pageResponse = new PageResponseDTO<>(
                 pageContent,
                 pageNumber,
                 pageSize,
-                filtered.size(),
+                (long) filtered.size(),
                 (filtered.size() + pageSize - 1) / pageSize,
                 pageNumber == 0,
                 end >= filtered.size(),
                 pageContent.isEmpty()
         );
-        
+
         return ResponseEntity.ok(ApiResponse.success(pageResponse, "Products retrieved successfully"));
     }
 
     /**
      * Get latest products.
-     * 
+     *
      * GET /api/v1/products/latest?limit=10
      */
     @GetMapping("/latest")
@@ -109,6 +109,7 @@ public class AdminProductController {
             @RequestParam(defaultValue = "10") int limit) {
         var allProducts = productService.findAll();
         var latest = allProducts.stream()
+                .sorted((a, b) -> b.createdAt() != null && a.createdAt() != null ? b.createdAt().compareTo(a.createdAt()) : 0)
                 .limit(limit)
                 .toList();
         return ResponseEntity.ok(ApiResponse.success(latest, "Latest products retrieved successfully"));
@@ -116,7 +117,7 @@ public class AdminProductController {
 
     /**
      * Search products by keyword and filters.
-     * 
+     *
      * GET /api/v1/products/search
      */
     @GetMapping("/search")
@@ -131,45 +132,46 @@ public class AdminProductController {
             @RequestParam(required = false) Boolean isPublished,
             Pageable pageable) {
         var allProducts = productService.findAll();
-        
+
         // Apply search filters
         var searched = allProducts.stream()
-                .filter(p -> keyword == null || keyword.isEmpty() || 
+                .filter(p -> keyword == null || keyword.isEmpty() ||
                         p.name().toLowerCase().contains(keyword.toLowerCase()) ||
                         (p.description() != null && p.description().toLowerCase().contains(keyword.toLowerCase())) ||
                         (p.sku() != null && p.sku().toLowerCase().contains(keyword.toLowerCase())))
-                .filter(p -> categoryIds == null || categoryIds.isEmpty() || p.categoryIds() == null || !p.categoryIds().isEmpty())
-                .filter(p -> brandIds == null || brandIds.isEmpty() || brandIds.contains(p.brandId()))
+                .filter(p -> categoryIds == null || categoryIds.isEmpty() || (p.categories() != null && p.categories().stream().anyMatch(c -> categoryIds.contains(c.id()))))
+                .filter(p -> brandIds == null || brandIds.isEmpty() || brandIds.contains(p.brand().id()))
                 .filter(p -> minPrice == null || p.price().compareTo(minPrice) >= 0)
                 .filter(p -> maxPrice == null || p.price().compareTo(maxPrice) <= 0)
-                .filter(p -> inStock == null || !inStock || (p.stockQuantity() != null && p.stockQuantity() > 0))
-                .filter(p -> isPublished == null || p.isPublished().equals(isPublished))
+                .filter(p -> inStock == null || (inStock && p.stockQuantity() != null && p.stockQuantity() > 0) || (!inStock && (p.stockQuantity() == null || p.stockQuantity() <= 0)))
+                .filter(p -> isPublished == null || p.isPublished() == isPublished)
                 .toList();
-        
+
         // Create paginated response
         int pageNumber = pageable.getPageNumber();
         int pageSize = pageable.getPageSize();
         int start = pageNumber * pageSize;
         int end = Math.min(start + pageSize, searched.size());
-        
-        var pageContent = start < searched.size() ? searched.subList(start, end) : List.of();
-        var pageResponse = new PageResponseDTO<>(
+
+        List<ProductDTO> pageContent = start < searched.size() ? searched.subList(start, end) : List.of();
+        PageResponseDTO<ProductDTO> pageResponse = new PageResponseDTO<>(
                 pageContent,
                 pageNumber,
                 pageSize,
-                searched.size(),
+                (long) searched.size(),
                 (searched.size() + pageSize - 1) / pageSize,
                 pageNumber == 0,
                 end >= searched.size(),
                 pageContent.isEmpty()
         );
-        
-        return ResponseEntity.ok(ApiResponse.success(pageResponse, "Product search completed successfully"));
+
+        ApiResponse<PageResponseDTO<ProductDTO>> response = ApiResponse.success(pageResponse, "Product search completed successfully");
+        return ResponseEntity.ok(response);
     }
 
     /**
      * Get warehouse inventory overview.
-     * 
+     *
      * GET /api/v1/products/warehouse
      */
     @GetMapping("/warehouse")
@@ -182,7 +184,7 @@ public class AdminProductController {
         try {
             // Get inventory data from inventory-service
             PageResponseDTO<WarehouseProductDTO> inventoryPage;
-            
+
             if (outOfStock != null && outOfStock) {
                 var response = inventoryServiceClient.getOutOfStockInventory(pageable);
                 inventoryPage = convertInventoryToWarehouseProducts(response.getData());
@@ -193,7 +195,7 @@ public class AdminProductController {
                 var response = inventoryServiceClient.getAllInventory(pageable);
                 inventoryPage = convertInventoryToWarehouseProducts(response.getData());
             }
-            
+
             // Filter by SKU if provided
             if (sku != null && !sku.isEmpty()) {
                 var filtered = inventoryPage.content().stream()
@@ -205,13 +207,13 @@ public class AdminProductController {
                         inventoryPage.pageSize(),
                         inventoryPage.totalElements(),
                         inventoryPage.totalPages(),
-                        inventoryPage.isFirst(),
-                        inventoryPage.isLast(),
+                        inventoryPage.first(),
+                        inventoryPage.last(),
                         filtered.isEmpty()
                 );
                 return ResponseEntity.ok(ApiResponse.success(filteredResponse, "Warehouse products retrieved successfully"));
             }
-            
+
             return ResponseEntity.ok(ApiResponse.success(inventoryPage, "Warehouse products retrieved successfully"));
         } catch (Exception e) {
             // Fallback: return empty response if inventory-service is unavailable
@@ -228,29 +230,31 @@ public class AdminProductController {
             return ResponseEntity.ok(ApiResponse.success(emptyResponse, "Warehouse products retrieved successfully (inventory service unavailable)"));
         }
     }
-    
+
     private PageResponseDTO<WarehouseProductDTO> convertInventoryToWarehouseProducts(PageResponseDTO<InventoryDTO> inventoryPage) {
         var allProducts = productService.findAll();
-        
+
         var warehouseProducts = inventoryPage.content().stream()
                 .map(inventory -> {
                     var product = allProducts.stream()
                             .filter(p -> p.id().equals(inventory.productId()))
                             .findFirst();
-                    
+
                     if (product.isPresent()) {
                         var p = product.get();
-                        var availableQty = inventory.quantity() - inventory.reservedQuantity();
+                        // Null-safe calculation
+                        long availableQty = (inventory.quantity() != null ? inventory.quantity() : 0) -
+                                (inventory.reservedQuantity() != null ? inventory.reservedQuantity() : 0);
                         return new WarehouseProductDTO(
                                 p.id(),
                                 p.name(),
                                 inventory.sku(),
-                                inventory.quantity().intValue(),
-                                inventory.reservedQuantity().intValue(),
-                                availableQty.intValue(),
+                                inventory.quantity() != null ? inventory.quantity().intValue() : 0,
+                                inventory.reservedQuantity() != null ? inventory.reservedQuantity().intValue() : 0,
+                                (int) availableQty,
                                 p.cost(),
                                 "Warehouse " + inventory.warehouseId(),
-                                inventory.quantity() <= 10,
+                                inventory.quantity() != null && inventory.quantity() <= 10,
                                 10,
                                 20
                         );
@@ -259,22 +263,22 @@ public class AdminProductController {
                 })
                 .filter(p -> p != null)
                 .collect(Collectors.toList());
-        
+
         return new PageResponseDTO<>(
                 warehouseProducts,
                 inventoryPage.pageNumber(),
                 inventoryPage.pageSize(),
-                inventoryPage.totalElements(),
-                inventoryPage.totalPages(),
-                inventoryPage.isFirst(),
-                inventoryPage.isLast(),
+                (long) warehouseProducts.size(),
+                (int) Math.ceil((double) warehouseProducts.size() / (inventoryPage.pageSize() > 0 ? inventoryPage.pageSize() : 1)),
+                inventoryPage.pageNumber() == 0,
+                true,
                 warehouseProducts.isEmpty()
         );
     }
 
     /**
      * Export products for external use.
-     * 
+     *
      * GET /api/v1/products/export
      */
     @GetMapping("/export")
@@ -285,26 +289,26 @@ public class AdminProductController {
             @RequestParam(required = false) List<Long> brandIds,
             @RequestParam(defaultValue = "csv") String format) {
         var allProducts = productService.findAll();
-        
+
         // Apply filters
         var filtered = allProducts.stream()
                 .filter(p -> ids == null || ids.isEmpty() || ids.contains(p.id()))
-                .filter(p -> categoryIds == null || categoryIds.isEmpty() || p.categoryIds() == null || !p.categoryIds().isEmpty())
-                .filter(p -> brandIds == null || brandIds.isEmpty() || brandIds.contains(p.brandId()))
+                .filter(p -> categoryIds == null || categoryIds.isEmpty() || (p.categories() != null && p.categories().stream().anyMatch(c -> categoryIds.contains(c.id()))))
+                .filter(p -> brandIds == null || brandIds.isEmpty() || brandIds.contains(p.brand().id()))
                 .toList();
-        
+
         // Generate CSV export
         byte[] csvBytes = exportToCSV(filtered);
-        
+
         return ResponseEntity.ok(ApiResponse.success(csvBytes, "Products exported successfully"));
     }
-    
+
     private byte[] exportToCSV(List<ProductDTO> products) {
         StringBuilder csv = new StringBuilder();
-        
+
         // CSV Header
         csv.append("ID,Name,SKU,Price,Stock Quantity,Published,Featured,Brand ID,Cost\n");
-        
+
         // CSV Data
         for (ProductDTO product : products) {
             csv.append(product.id()).append(",");
@@ -314,13 +318,13 @@ public class AdminProductController {
             csv.append(product.stockQuantity() != null ? product.stockQuantity() : "0").append(",");
             csv.append(product.isPublished()).append(",");
             csv.append(product.isFeatured()).append(",");
-            csv.append(product.brandId() != null ? product.brandId() : "\"\"").append(",");
+            csv.append(product.brand() != null && product.brand().id() != null ? product.brand().id() : "\"\"").append(",");
             csv.append(product.cost()).append("\n");
         }
-        
+
         return csv.toString().getBytes(StandardCharsets.UTF_8);
     }
-    
+
     private String escapeCsvValue(String value) {
         if (value == null) {
             return "";
@@ -330,7 +334,7 @@ public class AdminProductController {
 
     /**
      * Create a new product.
-     * 
+     *
      * POST /api/v1/products
      */
     @PostMapping
@@ -344,7 +348,7 @@ public class AdminProductController {
 
     /**
      * Get product by ID.
-     * 
+     *
      * GET /api/v1/products/{id}
      */
     @GetMapping("/{id}")
@@ -356,7 +360,7 @@ public class AdminProductController {
 
     /**
      * Update product by ID.
-     * 
+     *
      * PUT /api/v1/products/{id}
      */
     @PutMapping("/{id}")
@@ -370,7 +374,7 @@ public class AdminProductController {
 
     /**
      * Delete product by ID.
-     * 
+     *
      * DELETE /api/v1/products/{id}
      */
     @DeleteMapping("/{id}")
@@ -386,7 +390,7 @@ public class AdminProductController {
 
     /**
      * Update product quantity.
-     * 
+     *
      * PUT /api/v1/products/{id}/quantity
      */
     @PutMapping("/{id}/quantity")
@@ -400,7 +404,7 @@ public class AdminProductController {
 
     /**
      * Subtract product quantity (e.g., for order processing).
-     * 
+     *
      * POST /api/v1/products/{id}/quantity/subtract
      */
     @PostMapping("/{id}/quantity/subtract")
@@ -418,7 +422,7 @@ public class AdminProductController {
 
     /**
      * Get all product attributes with optional pagination.
-     * 
+     *
      * GET /api/v1/products/attributes
      * GET /api/v1/products/attributes?page=0&size=10
      */
@@ -431,7 +435,7 @@ public class AdminProductController {
 
     /**
      * Get product attribute by ID.
-     * 
+     *
      * GET /api/v1/products/attributes/{id}
      */
     @GetMapping("/attributes/{id}")
@@ -443,7 +447,7 @@ public class AdminProductController {
 
     /**
      * Create a new product attribute.
-     * 
+     *
      * POST /api/v1/products/attributes
      */
     @PostMapping("/attributes")
@@ -457,7 +461,7 @@ public class AdminProductController {
 
     /**
      * Update product attribute by ID.
-     * 
+     *
      * PUT /api/v1/products/attributes/{id}
      */
     @PutMapping("/attributes/{id}")
@@ -471,7 +475,7 @@ public class AdminProductController {
 
     /**
      * Delete product attribute by ID.
-     * 
+     *
      * DELETE /api/v1/products/attributes/{id}
      */
     @DeleteMapping("/attributes/{id}")
@@ -483,7 +487,7 @@ public class AdminProductController {
 
     /**
      * Get product attribute values by attribute ID.
-     * 
+     *
      * GET /api/v1/products/attribute-values?attributeId=1
      */
     @GetMapping("/attribute-values")
@@ -500,7 +504,7 @@ public class AdminProductController {
 
     /**
      * Get all product attribute groups with optional pagination.
-     * 
+     *
      * GET /api/v1/products/attribute-groups
      * GET /api/v1/products/attribute-groups?page=0&size=10
      */
@@ -513,7 +517,7 @@ public class AdminProductController {
 
     /**
      * Get product attribute group by ID.
-     * 
+     *
      * GET /api/v1/products/attribute-groups/{id}
      */
     @GetMapping("/attribute-groups/{id}")
@@ -525,7 +529,7 @@ public class AdminProductController {
 
     /**
      * Create a new product attribute group.
-     * 
+     *
      * POST /api/v1/products/attribute-groups
      */
     @PostMapping("/attribute-groups")
@@ -539,7 +543,7 @@ public class AdminProductController {
 
     /**
      * Update product attribute group by ID.
-     * 
+     *
      * PUT /api/v1/products/attribute-groups/{id}
      */
     @PutMapping("/attribute-groups/{id}")
@@ -553,7 +557,7 @@ public class AdminProductController {
 
     /**
      * Delete product attribute group by ID.
-     * 
+     *
      * DELETE /api/v1/products/attribute-groups/{id}
      */
     @DeleteMapping("/attribute-groups/{id}")
@@ -569,7 +573,7 @@ public class AdminProductController {
 
     /**
      * Get all product options with optional pagination.
-     * 
+     *
      * GET /api/v1/products/options
      * GET /api/v1/products/options?page=0&size=10
      */
@@ -582,7 +586,7 @@ public class AdminProductController {
 
     /**
      * Get product option by ID.
-     * 
+     *
      * GET /api/v1/products/options/{id}
      */
     @GetMapping("/options/{id}")
@@ -594,7 +598,7 @@ public class AdminProductController {
 
     /**
      * Create a new product option.
-     * 
+     *
      * POST /api/v1/products/options
      */
     @PostMapping("/options")
@@ -608,7 +612,7 @@ public class AdminProductController {
 
     /**
      * Update product option by ID.
-     * 
+     *
      * PUT /api/v1/products/options/{id}
      */
     @PutMapping("/options/{id}")
@@ -622,7 +626,7 @@ public class AdminProductController {
 
     /**
      * Delete product option by ID.
-     * 
+     *
      * DELETE /api/v1/products/options/{id}
      */
     @DeleteMapping("/options/{id}")
@@ -638,16 +642,13 @@ public class AdminProductController {
 
     /**
      * Get all product option values.
-     * 
+     *
      * GET /api/v1/products/option-values
      */
     @GetMapping("/option-values")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<ProductOptionValueDTO>>> getOptionValues(
-            @RequestParam(required = false) Long optionId) {
-        if (optionId == null) {
-            throw new IllegalArgumentException("optionId parameter is required");
-        }
+            @RequestParam(required = true) Long optionId) {
         var values = productOptionValueService.getOptionValues(optionId);
         return ResponseEntity.ok(ApiResponse.success(values, "Product option values retrieved successfully"));
     }
