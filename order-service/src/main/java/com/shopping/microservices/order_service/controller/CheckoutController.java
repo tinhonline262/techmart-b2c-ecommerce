@@ -31,11 +31,12 @@ public class CheckoutController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ApiResponse<CheckoutResponse>> createCheckout(
             @Valid @RequestBody CreateCheckoutRequest request) {
+        CheckoutResponse response = checkoutService.createCheckout(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(
                         HttpStatus.CREATED.value(),
                         "Checkout created successfully",
-                        null // placeholder: checkoutService.createCheckout(request)
+                        response
                 ));
     }
 
@@ -49,10 +50,11 @@ public class CheckoutController {
     @PutMapping("/status")
     public ResponseEntity<ApiResponse<CheckoutResponse>> updateCheckoutStatus(
             @Valid @RequestBody UpdateCheckoutStatusRequest request) {
+        CheckoutResponse response = checkoutService.updateCheckoutStatus(request);
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
                 "Checkout status updated successfully",
-                null // placeholder: checkoutService.updateCheckoutStatus(request)
+                response
         ));
     }
 
@@ -66,10 +68,11 @@ public class CheckoutController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CheckoutResponse>> getCheckoutById(
             @PathVariable("id") String id) {
+        CheckoutResponse response = checkoutService.getCheckoutById(id);
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
                 "Checkout retrieved successfully",
-                null // placeholder: checkoutService.getCheckoutById(id)
+                response
         ));
     }
 
@@ -85,10 +88,11 @@ public class CheckoutController {
     public ResponseEntity<ApiResponse<CheckoutResponse>> updatePaymentMethod(
             @PathVariable("id") String id,
             @Valid @RequestBody UpdatePaymentMethodRequest request) {
+        CheckoutResponse response = checkoutService.updatePaymentMethod(id, request);
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
                 "Payment method updated successfully",
-                null // placeholder: checkoutService.updatePaymentMethod(id, request)
+                response
         ));
     }
 }

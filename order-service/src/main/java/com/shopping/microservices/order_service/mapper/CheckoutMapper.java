@@ -44,6 +44,8 @@ public class CheckoutMapper {
             checkout.getEmail(),
             checkout.getNote(),
             checkout.getPromotionCode(),
+            checkout.getStatus(),
+            checkout.getProgress(),
             checkout.getCustomerId(),
             checkout.getShipmentMethodId(),
             checkout.getPaymentMethodId(),
@@ -53,13 +55,11 @@ public class CheckoutMapper {
             checkout.getTotalShipmentTax(),
             checkout.getTotalTax(),
             checkout.getTotalDiscountAmount(),
-            checkout.getStatus(),
-            checkout.getProgress(),
-            checkout.getLastError(),
+            null,
             checkout.getAttributes(),
+            checkout.getLastError(),
             checkout.getCreatedAt(),
-            checkout.getUpdatedAt(),
-            null  // items
+            checkout.getUpdatedAt()
         );
     }
 
@@ -73,6 +73,8 @@ public class CheckoutMapper {
             checkout.getEmail(),
             checkout.getNote(),
             checkout.getPromotionCode(),
+            checkout.getStatus(),
+            checkout.getProgress(),
             checkout.getCustomerId(),
             checkout.getShipmentMethodId(),
             checkout.getPaymentMethodId(),
@@ -82,13 +84,11 @@ public class CheckoutMapper {
             checkout.getTotalShipmentTax(),
             checkout.getTotalTax(),
             checkout.getTotalDiscountAmount(),
-            checkout.getStatus(),
-            checkout.getProgress(),
-            checkout.getLastError(),
+            items,
             checkout.getAttributes(),
+            checkout.getLastError(),
             checkout.getCreatedAt(),
-            checkout.getUpdatedAt(),
-            items
+            checkout.getUpdatedAt()
         );
     }
 
@@ -124,7 +124,8 @@ public class CheckoutMapper {
         
         CheckoutItem item = new CheckoutItem();
         item.setProductId(request.productId());
-        item.setVariantId(request.variantId());
+        item.setName(request.name());
+        item.setDescription(request.description());
         item.setQuantity(request.quantity());
         item.setPrice(request.price());
         item.setTax(request.tax());
@@ -153,14 +154,17 @@ public class CheckoutMapper {
         return new CheckoutItemResponse(
             item.getId(),
             item.getProductId(),
-            item.getVariantId(),
+            item.getName(),
+            item.getDescription(),
             item.getQuantity(),
             item.getPrice(),
             item.getTax(),
             item.getShipmentFee(),
             item.getShipmentTax(),
             item.getDiscountAmount(),
-            calculateItemSubtotal(item)
+            calculateItemSubtotal(item),
+            item.getCreatedAt(),
+            item.getUpdatedAt()
         );
     }
 

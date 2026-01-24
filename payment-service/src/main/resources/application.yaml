@@ -108,29 +108,10 @@ payment:
 
   # VNPay Configuration
   vnpay:
-    tmn-code: ${VNPAY_TMN_CODE:DEMO_TMN}
-    hash-secret: ${VNPAY_HASH_SECRET:DEMO_SECRET}
+    tmn-code: ${VNPAY_TMN_CODE:SDOSKJ4E}
+    hash-secret: ${VNPAY_HASH_SECRET:7U9C2KGVUC5WHPND14QOPNBBKCIKSLGL}
     api-url: ${VNPAY_API_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
-    return-url: ${VNPAY_RETURN_URL:http://localhost:8080/api/v1/payments/callback/vnpay}
-
-  # MoMo Configuration
-  momo:
-    partner-code: ${MOMO_PARTNER_CODE:MOMO_DEMO}
-    access-key: ${MOMO_ACCESS_KEY:DEMO_ACCESS_KEY}
-    secret-key: ${MOMO_SECRET_KEY:DEMO_SECRET_KEY}
-    api-url: ${MOMO_API_URL:https://test-payment.momo.vn}
-    return-url: ${MOMO_RETURN_URL:http://localhost:8080/payment/result}
-    ipn-url: ${MOMO_IPN_URL:http://localhost:8088/api/v1/payments/callback/momo}
-
-  # PayPal Configuration
-  paypal:
-    client-id: ${PAYPAL_CLIENT_ID:DEMO_CLIENT_ID}
-    client-secret: ${PAYPAL_CLIENT_SECRET:DEMO_CLIENT_SECRET}
-    api-url: ${PAYPAL_API_URL:https://api-m.sandbox.paypal.com}
-    return-url: ${PAYPAL_RETURN_URL:http://localhost:8080/payment/success}
-    cancel-url: ${PAYPAL_CANCEL_URL:http://localhost:8080/payment/cancel}
-    webhook-id: ${PAYPAL_WEBHOOK_ID:}
-    vnd-to-usd-rate: ${PAYPAL_VND_TO_USD_RATE:24000}
+    return-url: ${VNPAY_RETURN_URL:http://localhost:8088/api/v1/payments/callback/vnpay}
 
   # COD Configuration
   cod:

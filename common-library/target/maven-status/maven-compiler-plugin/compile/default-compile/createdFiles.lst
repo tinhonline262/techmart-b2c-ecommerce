@@ -27,7 +27,6 @@ com\shopping\microservices\common_library\event\NotificationEvent$NotificationEv
 com\shopping\microservices\common_library\dto\ApiResponse.class
 com\shopping\microservices\common_library\event\InventoryEvent$InventoryEventType.class
 com\shopping\microservices\common_library\exception\InsufficientInventoryException.class
-com\shopping\microservices\common_library\event\BaseEvent.class
 com\shopping\microservices\common_library\config\CaffeineCacheMetricsConfig.class
 com\shopping\microservices\common_library\event\OrderEvent$OrderItemData.class
 com\shopping\microservices\common_library\config\TwoLevelCacheManager.class

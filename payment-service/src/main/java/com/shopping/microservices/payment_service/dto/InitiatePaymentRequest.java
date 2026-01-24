@@ -30,10 +30,6 @@ public class InitiatePaymentRequest {
     @NotNull
     private PaymentMethod paymentMethod;
     
-    @NotBlank
-    @URL
-    private String returnUrl;
-    
     @URL
     private String cancelUrl;
     

@@ -1,12 +1,9 @@
 package com.shopping.microservices.order_service.enumeration;
 
-public enum OrderStatus {
+public enum ShipmentStatus {
     PENDING,
-    CONFIRMED,
-    PROCESSING,
+    PREPARING,
     SHIPPED,
     DELIVERED,
-    COMPLETED,
-    CANCELLED,
-    FAILED
+    RETURNED
 }

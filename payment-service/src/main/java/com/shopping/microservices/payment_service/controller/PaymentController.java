@@ -90,43 +90,6 @@ public class PaymentController {
     }
 
     /**
-     * Handle callback from MoMo (IPN)
-     */
-    @PostMapping("/callback/momo")
-    public ResponseEntity<Map<String, Object>> handleMoMoCallback(@RequestBody Map<String, String> params) {
-        log.info("Received MoMo callback");
-        
-        PaymentCallbackResponse response = paymentService.handleCallback("MOMO", params);
-        
-        // MoMo expects JSON response
-        Map<String, Object> momoResponse = new HashMap<>();
-        momoResponse.put("status", response.isSuccess() ? 0 : 1);
-        momoResponse.put("message", response.getMessage());
-        
-        return ResponseEntity.ok(momoResponse);
-    }
-
-    /**
-     * Handle callback from PayPal webhook
-     */
-    @PostMapping("/callback/paypal")
-    public ResponseEntity<String> handlePayPalCallback(
-            @RequestBody String body,
-            @RequestHeader Map<String, String> headers) {
-        
-        log.info("Received PayPal webhook");
-        
-        // Extract relevant headers and body into params
-        Map<String, String> params = new HashMap<>(headers);
-        params.put("WEBHOOK_BODY", body);
-        
-        PaymentCallbackResponse response = paymentService.handleCallback("PAYPAL", params);
-        
-        // PayPal expects 200 OK for successful receipt
-        return ResponseEntity.ok("OK");
-    }
-
-    /**
      * Handle COD payment confirmation
      */
     @PostMapping("/callback/cod")

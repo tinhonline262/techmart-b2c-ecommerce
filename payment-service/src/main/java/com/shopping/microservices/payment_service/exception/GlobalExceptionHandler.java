@@ -19,6 +19,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -277,6 +278,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ApiResponse.error(errorResponse));
     }
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<String> handleNoHandlerFound(NoHandlerFoundException ex) {
+        if (ex.getRequestURL().equals("/favicon.ico")) {
+            return ResponseEntity.ok().build(); // bỏ qua favicon
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not Found");
+    }
+
 
     /**
      * Handle all other exceptions

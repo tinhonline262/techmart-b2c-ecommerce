@@ -7,7 +7,6 @@ D:\source\new\spring-microservices-demo\online-shopping-microservice\common-libr
 D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\dto\AddressDTO.java
 D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\dto\ApiResponse.java
 D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\dto\ErrorResponse.java
-D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\event\BaseEvent.java
 D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\event\InventoryEvent.java
 D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\event\NotificationEvent.java
 D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\event\OrderEvent.java
@@ -18,6 +17,7 @@ D:\source\new\spring-microservices-demo\online-shopping-microservice\common-libr
 D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\exception\PaymentException.java
 D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\exception\ResourceNotFoundException.java
 D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\exception\ValidationException.java
+D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\kafka\BaseEvent.java
 D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\kafka\EventPublisher.java
 D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\kafka\KafkaConsumerConfig.java
 D:\source\new\spring-microservices-demo\online-shopping-microservice\common-library\src\main\java\com\shopping\microservices\common_library\kafka\KafkaProducerConfig.java

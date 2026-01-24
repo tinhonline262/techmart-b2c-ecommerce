@@ -131,13 +131,25 @@ public class OrderEvent extends BaseEvent {
      */
     public static OrderEvent orderCreated(String source, Long orderId, String customerId, 
                                           String email, BigDecimal totalAmount, 
-                                          List<OrderItemData> items) {
+                                          List<OrderItemData> items, Map<String, Object> metadata) {
         OrderEvent event = new OrderEvent(OrderEventType.ORDER_CREATED, source);
         event.setOrderId(orderId);
         event.setCustomerId(customerId);
         event.setEmail(email);
         event.setTotalAmount(totalAmount);
         event.setItems(items);
+        event.setMetadata(metadata);
+        return event;
+    }
+
+    /**
+     * Static factory method for creating ORDER_CONFIRMED events
+     */
+    public static OrderEvent orderConfirmed(String source, Long orderId, String customerId, String email) {
+        OrderEvent event = new OrderEvent(OrderEventType.ORDER_CONFIRMED, source);
+        event.setOrderId(orderId);
+        event.setCustomerId(customerId);
+        event.setEmail(email);
         return event;
     }
 

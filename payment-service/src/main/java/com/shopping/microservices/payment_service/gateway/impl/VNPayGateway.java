@@ -82,7 +82,7 @@ public class VNPayGateway implements PaymentGateway {
             vnpParams.put("vnp_OrderInfo", "Payment for order: " + (payment.getOrderId() != null ? payment.getOrderId() : payment.getCheckoutId()));
             vnpParams.put("vnp_OrderType", "other");
             vnpParams.put("vnp_Locale", request.getLocale() != null ? request.getLocale() : "vn");
-            vnpParams.put("vnp_ReturnUrl", request.getReturnUrl() != null ? request.getReturnUrl() : returnUrl);
+            vnpParams.put("vnp_ReturnUrl", returnUrl);
             vnpParams.put("vnp_IpAddr", request.getCustomerInfo() != null ? request.getCustomerInfo().getIpAddress() : "127.0.0.1");
             vnpParams.put("vnp_CreateDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
             
@@ -193,12 +193,20 @@ public class VNPayGateway implements PaymentGateway {
     
     // Helper methods
     private String buildHashData(Map<String, String> params) {
-        return params.entrySet().stream()
-            .filter(e -> e.getValue() != null && !e.getValue().isEmpty())
-            .map(e -> e.getKey() + "=" + e.getValue())
-            .collect(Collectors.joining("&"));
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                sb.append(entry.getKey())
+                        .append("=")
+                        .append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
+                        .append("&");
+            }
+        }
+        sb.setLength(sb.length() - 1); // remove last &
+        return sb.toString();
     }
-    
+
+
     private String buildQueryString(Map<String, String> params) {
         return params.entrySet().stream()
             .map(e -> {

@@ -95,7 +95,6 @@ public class OrderEventListener {
                     .checkoutId(checkoutId)
                     .amount(totalAmount)
                     .paymentMethod(paymentMethod)
-                    .returnUrl(null) // Not needed for COD
                     .customerInfo(extractCustomerInfo(event))
                     .build();
                 
