@@ -2,12 +2,14 @@ package com.shopping.microservices.order_service.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(name = "order_address", schema = "order_service_db")
 public class OrderAddress {
     @Id
@@ -59,5 +61,4 @@ public class OrderAddress {
     @Size(max = 100)
     @Column(name = "country_name", length = 100)
     private String countryName;
-
 }

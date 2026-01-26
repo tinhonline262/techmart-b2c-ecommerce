@@ -59,4 +59,25 @@ public class GlobalExceptionHandler extends RuntimeException {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), request.getRequestURI()));
     }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ApiResponse<String>> handleProductNotFoundException(ProductNotFoundException ex, HttpServletRequest request) {
+        log.info("Product not found exception: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(HttpStatus.NOT_FOUND.value(), ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(InsufficientInventoryException.class)
+    public ResponseEntity<ApiResponse<String>> handleInsufficientInventoryException(InsufficientInventoryException ex, HttpServletRequest request) {
+        log.info("Insufficient inventory exception: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(InventoryReservationException.class)
+    public ResponseEntity<ApiResponse<String>> handleInventoryReservationException(InventoryReservationException ex, HttpServletRequest request) {
+        log.info("Inventory reservation exception: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), request.getRequestURI()));
+    }
 }

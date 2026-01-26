@@ -24,10 +24,6 @@ public record CheckoutResponse(
         BigDecimal totalShipmentTax,
         BigDecimal totalTax,
         BigDecimal totalDiscountAmount,
-        List<CheckoutItemResponse> items,
-        Map<String, Object> attributes,
-        Map<String, Object> lastError,
-        Instant createdAt,
-        Instant updatedAt
+        List<CheckoutItemResponse> items
 ) {
 }

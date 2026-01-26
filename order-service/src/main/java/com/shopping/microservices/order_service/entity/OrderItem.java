@@ -2,12 +2,12 @@ package com.shopping.microservices.order_service.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
@@ -17,6 +17,9 @@ import java.util.Map;
 @Getter
 @Setter
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(name = "order_item", schema = "order_service_db")
 public class OrderItem {
     @Id
@@ -35,6 +38,10 @@ public class OrderItem {
     @Size(max = 255)
     @Column(name = "name")
     private String name;
+
+    @Size(max = 100)
+    @Column(name = "sku", length = 100)
+    private String sku;
 
     @Column(name = "quantity")
     private Integer quantity;
@@ -60,7 +67,8 @@ public class OrderItem {
 
     @Size(max = 50)
     @Column(name = "status", length = 50)
-    private String status;
+    @Builder.Default
+    private String status = "PENDING";
 
     @Column(name = "shipment_tax", precision = 19, scale = 2)
     private BigDecimal shipmentTax;
@@ -69,12 +77,11 @@ public class OrderItem {
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> processingState;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at")
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;
-
 }

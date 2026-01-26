@@ -23,7 +23,7 @@ public class ReservedOrder {
     private Long id;
 
     @Column(name = "order_id", nullable = false, length = 100)
-    private String orderId;
+    private Long orderId;
 
     @Column(name = "product_id", nullable = false)
     private Long productId;

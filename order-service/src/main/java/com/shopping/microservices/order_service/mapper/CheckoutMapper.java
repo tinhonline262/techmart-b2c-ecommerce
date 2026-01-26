@@ -3,10 +3,12 @@ package com.shopping.microservices.order_service.mapper;
 import com.shopping.microservices.order_service.dto.checkout.*;
 import com.shopping.microservices.order_service.entity.Checkout;
 import com.shopping.microservices.order_service.entity.CheckoutItem;
+import com.shopping.microservices.order_service.model.enumeration.CheckoutState;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -14,6 +16,10 @@ public class CheckoutMapper {
 
     // ==================== Checkout Entity <-> DTO ====================
 
+    /**
+     * Converts CreateCheckoutRequest to Checkout entity.
+     * Sets initial status and progress values.
+     */
     public Checkout toEntity(CreateCheckoutRequest request) {
         if (request == null) {
             return null;
@@ -23,100 +29,57 @@ public class CheckoutMapper {
         checkout.setEmail(request.email());
         checkout.setNote(request.note());
         checkout.setPromotionCode(request.promotionCode());
-        checkout.setCustomerId(request.customerId());
         checkout.setShipmentMethodId(request.shipmentMethodId());
         checkout.setPaymentMethodId(request.paymentMethodId());
         checkout.setShippingAddressId(request.shippingAddressId());
-        checkout.setAttributes(request.attributes());
         checkout.setStatus("PENDING");
         checkout.setProgress("CREATED");
         
         return checkout;
     }
 
-    public CheckoutResponse toResponse(Checkout checkout) {
+    /**
+     * Converts Checkout entity to CheckoutResponse ViewModel.
+     * Automatically maps nested items if present.
+     */
+    public CheckoutResponse toDTO(Checkout checkout) {
         if (checkout == null) {
             return null;
         }
         
-        return new CheckoutResponse(
-            checkout.getId(),
-            checkout.getEmail(),
-            checkout.getNote(),
-            checkout.getPromotionCode(),
-            checkout.getCustomerId(),
-            checkout.getShipmentMethodId(),
-            checkout.getPaymentMethodId(),
-            checkout.getShippingAddressId(),
-            checkout.getTotalAmount(),
-            checkout.getTotalShipmentFee(),
-            checkout.getTotalShipmentTax(),
-            checkout.getTotalTax(),
-            checkout.getTotalDiscountAmount(),
-            checkout.getStatus(),
-            checkout.getProgress(),
-            checkout.getLastError(),
-            checkout.getAttributes(),
-            checkout.getCreatedAt(),
-            checkout.getUpdatedAt(),
-            null  // items
-        );
-    }
-
-    public CheckoutResponse toResponseWithItems(Checkout checkout, List<CheckoutItemResponse> items) {
-        if (checkout == null) {
-            return null;
+        List<CheckoutItemResponse> items = null;
+        if (checkout.getItems() != null) {
+            items = checkout.getItems().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
         }
         
-        return new CheckoutResponse(
-            checkout.getId(),
-            checkout.getEmail(),
-            checkout.getNote(),
-            checkout.getPromotionCode(),
-            checkout.getCustomerId(),
-            checkout.getShipmentMethodId(),
-            checkout.getPaymentMethodId(),
-            checkout.getShippingAddressId(),
-            checkout.getTotalAmount(),
-            checkout.getTotalShipmentFee(),
-            checkout.getTotalShipmentTax(),
-            checkout.getTotalTax(),
-            checkout.getTotalDiscountAmount(),
-            checkout.getStatus(),
-            checkout.getProgress(),
-            checkout.getLastError(),
-            checkout.getAttributes(),
-            checkout.getCreatedAt(),
-            checkout.getUpdatedAt(),
-            items
-        );
-    }
-
-    public void updateCheckoutStatus(UpdateCheckoutStatusRequest request, Checkout checkout) {
-        if (request == null || checkout == null) {
-            return;
-        }
-        
-        if (request.status() != null) {
-            checkout.setStatus(request.status());
-        }
-        if (request.progress() != null) {
-            checkout.setProgress(request.progress());
-        }
-    }
-
-    public void updatePaymentMethod(UpdatePaymentMethodRequest request, Checkout checkout) {
-        if (request == null || checkout == null) {
-            return;
-        }
-        
-        if (request.paymentMethodId() != null) {
-            checkout.setPaymentMethodId(request.paymentMethodId());
-        }
+        return CheckoutResponse.builder()
+            .id(checkout.getId())
+            .email(checkout.getEmail())
+            .note(checkout.getNote())
+            .promotionCode(checkout.getPromotionCode())
+            .status(checkout.getStatus())
+            .progress(checkout.getProgress())
+            .customerId(checkout.getCustomerId())
+            .shipmentMethodId(checkout.getShipmentMethodId())
+            .paymentMethodId(checkout.getPaymentMethodId())
+            .shippingAddressId(checkout.getShippingAddressId())
+            .totalAmount(checkout.getTotalAmount())
+            .totalShipmentFee(checkout.getTotalShipmentFee())
+            .totalShipmentTax(checkout.getTotalShipmentTax())
+            .totalTax(checkout.getTotalTax())
+            .totalDiscountAmount(checkout.getTotalDiscountAmount())
+            .items(items)
+            .build();
     }
 
     // ==================== CheckoutItem Entity <-> DTO ====================
 
+    /**
+     * Converts CheckoutItemRequest to CheckoutItem entity.
+     * Product details (name, price) will be enriched from ProductService later.
+     */
     public CheckoutItem toEntity(CheckoutItemRequest request) {
         if (request == null) {
             return null;
@@ -124,58 +87,44 @@ public class CheckoutMapper {
         
         CheckoutItem item = new CheckoutItem();
         item.setProductId(request.productId());
-        item.setVariantId(request.variantId());
+        item.setDescription(request.description());
         item.setQuantity(request.quantity());
-        item.setPrice(request.price());
-        item.setTax(request.tax());
-        item.setShipmentFee(request.shipmentFee());
-        item.setShipmentTax(request.shipmentTax());
-        item.setDiscountAmount(request.discountAmount());
+        // name, price, tax, shipmentFee, shipmentTax, discountAmount 
+        // will be set from product service data during checkout creation
         
         return item;
     }
 
-    public List<CheckoutItem> toEntityList(List<CheckoutItemRequest> requests) {
-        if (requests == null) {
-            return null;
-        }
-        
-        return requests.stream()
-            .map(this::toEntity)
-            .collect(Collectors.toList());
-    }
-
-    public CheckoutItemResponse toResponse(CheckoutItem item) {
+    /**
+     * Converts CheckoutItem entity to CheckoutItemResponse ViewModel.
+     */
+    public CheckoutItemResponse toDTO(CheckoutItem item) {
         if (item == null) {
             return null;
         }
         
-        return new CheckoutItemResponse(
-            item.getId(),
-            item.getProductId(),
-            item.getVariantId(),
-            item.getQuantity(),
-            item.getPrice(),
-            item.getTax(),
-            item.getShipmentFee(),
-            item.getShipmentTax(),
-            item.getDiscountAmount(),
-            calculateItemSubtotal(item)
-        );
-    }
-
-    public List<CheckoutItemResponse> toResponseList(List<CheckoutItem> items) {
-        if (items == null) {
-            return null;
-        }
-        
-        return items.stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
+        return CheckoutItemResponse.builder()
+            .id(item.getId())
+            .productId(item.getProductId())
+            .name(item.getName())
+            .description(item.getDescription())
+            .quantity(item.getQuantity())
+            .price(item.getPrice())
+            .tax(item.getTax())
+            .shipmentFee(item.getShipmentFee())
+            .shipmentTax(item.getShipmentTax())
+            .discountAmount(item.getDiscountAmount())
+            .subtotal(calculateItemSubtotal(item))
+            .checkoutId(item.getCheckout() != null ? item.getCheckout().getId() : null)
+            .build();
     }
 
     // ==================== Helper Methods ====================
 
+    /**
+     * Calculates the subtotal for a checkout item.
+     * Formula: (price * quantity) + tax + shipmentFee + shipmentTax - discountAmount
+     */
     private BigDecimal calculateItemSubtotal(CheckoutItem item) {
         if (item.getPrice() == null || item.getQuantity() == null) {
             return BigDecimal.ZERO;

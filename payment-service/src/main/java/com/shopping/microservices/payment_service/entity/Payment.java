@@ -4,59 +4,92 @@ import com.shopping.microservices.payment_service.enums.PaymentMethod;
 import com.shopping.microservices.payment_service.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 
 @Entity
-@Table(name = "payments")
+@Table(name = "payment", indexes = {
+    @Index(name = "idx_order_id", columnList = "order_id"),
+    @Index(name = "idx_checkout_id", columnList = "checkout_id"),
+    @Index(name = "idx_payment_status", columnList = "payment_status"),
+    @Index(name = "idx_gateway_transaction_id", columnList = "gateway_transaction_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EntityListeners(AuditingEntityListener.class)
-public class Payment {
-
+public class Payment extends AbstractAuditEntity {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "order_id", nullable = false)
+    
+    @Column(name = "order_id")
     private Long orderId;
-
-    @Column(name = "order_number", nullable = false)
-    private String orderNumber;
-
-    @Column(name = "amount", nullable = false)
+    
+    @Column(name = "checkout_id", length = 50)
+    private String checkoutId;
+    
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
-
-    @Column(name = "currency")
-    private String currency = "VND";
-
+    
+    @Column(name = "payment_fee", precision = 19, scale = 2)
+    @Builder.Default
+    private BigDecimal paymentFee = BigDecimal.ZERO;
+    
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method", nullable = false)
+    @Column(name = "payment_method", nullable = false, length = 50)
     private PaymentMethod paymentMethod;
-
-    @Column(name = "payment_provider")
-    private String paymentProvider;
-
+    
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private PaymentStatus status = PaymentStatus.PENDING;
-
-    @Column(name = "provider_transaction_id")
-    private String providerTransactionId;
-
-    @CreatedDate
-    @Column(name = "created_at")
-    private Instant createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private Instant updatedAt;
+    @Column(name = "payment_status", nullable = false, length = 50)
+    @Builder.Default
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+    
+    @Column(name = "gateway_transaction_id", length = 255)
+    private String gatewayTransactionId;
+    
+    @Column(name = "failure_message", length = 1000)
+    private String failureMessage;
+    
+    @Column(name = "payment_provider_checkout_id", length = 255)
+    private String paymentProviderCheckoutId;
+    
+    // Business methods
+    public boolean isPending() {
+        return paymentStatus == PaymentStatus.PENDING || 
+               paymentStatus == PaymentStatus.INITIATED;
+    }
+    
+    public boolean isSuccessful() {
+        return paymentStatus == PaymentStatus.SUCCESS;
+    }
+    
+    public boolean isFailed() {
+        return paymentStatus == PaymentStatus.FAILED;
+    }
+    
+    public boolean canRefund() {
+        return paymentStatus.canRefund();
+    }
+    
+    public BigDecimal getTotalAmount() {
+        return amount.add(paymentFee != null ? paymentFee : BigDecimal.ZERO);
+    }
+    
+    public void markAsSuccess(String transactionId) {
+        this.paymentStatus = PaymentStatus.SUCCESS;
+        this.gatewayTransactionId = transactionId;
+        this.failureMessage = null;
+    }
+    
+    public void markAsFailed(String failureMessage) {
+        this.paymentStatus = PaymentStatus.FAILED;
+        this.failureMessage = failureMessage;
+    }
+    
+    public void markAsRefunded() {
+        this.paymentStatus = PaymentStatus.REFUNDED;
+    }
 }
-

@@ -12,11 +12,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class WarehouseServiceImpl implements WarehouseService {
 
@@ -41,7 +43,6 @@ public class WarehouseServiceImpl implements WarehouseService {
         log.info("Creating warehouse: {}", warehouse.getName());
 
         if (warehouseRepository.existsByName(warehouse.getName())) {
-            log.warn("Warehouse with name '{}' already exists", warehouse.getName());
             throw new IllegalArgumentException("Warehouse with name '" + warehouse.getName() + "' already exists");
         }
 
@@ -53,12 +54,8 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Override
     public Warehouse update(Long id, Warehouse warehouse) {
         log.info("Updating warehouse with id: {}", id);
-
         Warehouse existingWarehouse = warehouseRepository.findById(id)
-            .orElseThrow(() -> {
-                log.warn("Warehouse not found with id: {}", id);
-                return new IllegalArgumentException("Warehouse not found with id: " + id);
-            });
+            .orElseThrow(() -> new IllegalArgumentException("Warehouse not found with id: " + id));
 
         if (warehouseRepository.existsByNameWithDifferentId(warehouse.getName(), id)) {
             log.warn("Warehouse with name '{}' already exists", warehouse.getName());
@@ -93,5 +90,15 @@ public class WarehouseServiceImpl implements WarehouseService {
         Pageable pageable = PageRequest.of(pageNo, pageSize);
         return warehouseRepository.findAll(pageable);
     }
+
+    @Override
+    public Map<Long, String> getWarehouseNamesByIds(Set<Long> warehouseIds) {
+        return warehouseRepository.findAllById(warehouseIds).stream()
+                .collect(Collectors.toMap(
+                        Warehouse::getId,
+                        Warehouse::getName
+                ));
+    }
+
 }
 
