@@ -34,6 +34,8 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    validateOnMigrate: false
+    repairOnMigrate: true
 
   # Redis Configuration
   data:
@@ -42,13 +44,11 @@ spring:
       port: 6379
       timeout: 5000ms
       lettuce:
-          pool:
-              max-active: 8
-              max-idle: 8
-              min-idle: 2
-              max-wait: -1ms
-
-
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: -1ms
 
 # Redisson Configuration
 redisson:
@@ -99,8 +99,7 @@ logging:
         microservices: DEBUG
       github:
         benmanes:
-            caffeine: TRACE
-
+          caffeine: TRACE
 
 app:
   cache:

@@ -3,7 +3,10 @@ package com.shopping.microservices.product_service.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
@@ -11,8 +14,13 @@ import java.time.Instant;
 
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@Table(name = "product_template", schema = "product_service_db")
+@Table(name = "product_template", schema = "product_service_db", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "name", name = "uk_product_template_name")
+})
 public class ProductTemplate {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
