@@ -120,6 +120,9 @@ public class Product {
     @Column(name = "brand_id")
     private Long brandId;
 
+    @Column(name = "template_id")
+    private Long templateId;
+
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
     private Instant createdAt;

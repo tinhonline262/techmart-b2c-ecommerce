@@ -1,6 +1,7 @@
 package com.shopping.microservices.product_service.controller;
 
 import com.shopping.microservices.product_service.dto.*;
+import com.shopping.microservices.product_service.exception.ProductNotFoundException;
 import com.shopping.microservices.product_service.repository.*;
 import com.shopping.microservices.product_service.service.ProductService;
 import com.shopping.microservices.product_service.service.ProductAttributeService;
@@ -106,8 +107,15 @@ public class PublicProductController {
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductSummaryDTO>> getProductById(@PathVariable Long id) {
-        ProductSummaryDTO product = productService.findPublishedProductById(id);
-        return ResponseEntity.ok(ApiResponse.success(product, "Product retrieved successfully"));
+        log.info("Fetching published product with id: {}", id);
+        try {
+            ProductSummaryDTO product = productService.findPublishedProductById(id);
+            return ResponseEntity.ok(ApiResponse.success(product, "Product retrieved successfully"));
+        } catch (ProductNotFoundException e) {
+            log.warn("Published product not found with id: {}", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(404, "Product not found with id: " + id, "/api/v1/public/products/" + id));
+        }
     }
 
     /**
@@ -119,8 +127,16 @@ public class PublicProductController {
     @GetMapping("/{id}/detail")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductDetailDTO>> getProductDetail(@PathVariable Long id) {
-        ProductDetailDTO productDetail = productService.findPublishedProductDetailById(id);
-        return ResponseEntity.ok(ApiResponse.success(productDetail, "Product detail retrieved successfully"));
+        log.info("Fetching product detail with id: {}", id);
+        try {
+            ProductDetailDTO productDetail = productService.findPublishedProductDetailById(id);
+            return ResponseEntity.ok(ApiResponse.success(productDetail, "Product detail retrieved successfully"));
+        } catch (ProductNotFoundException e) {
+            log.warn("Product detail not found with id: {}", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(404, "Product not found with id: " + id,
+                            "/api/v1/public/products/" + id + "/detail"));
+        }
     }
 
     /**
@@ -132,8 +148,15 @@ public class PublicProductController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<ProductVariationDTO>>> getProductVariations(@PathVariable Long id) {
         log.info("Fetching product variations for product ID: {}", id);
-        List<ProductVariationDTO> variations = productService.findProductVariations(id);
-        return ResponseEntity.ok(ApiResponse.success(variations, "Product variations retrieved successfully"));
+        try {
+            List<ProductVariationDTO> variations = productService.findProductVariations(id);
+            return ResponseEntity.ok(ApiResponse.success(variations, "Product variations retrieved successfully"));
+        } catch (ProductNotFoundException e) {
+            log.warn("Product not found with id: {}", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(404, "Product not found with id: " + id,
+                            "/api/v1/public/products/" + id + "/variations"));
+        }
     }
 
     /**
@@ -148,8 +171,15 @@ public class PublicProductController {
             @PathVariable Long id,
             @RequestParam(defaultValue = "10") int limit) {
         log.info("Fetching related products for product ID: {} with limit: {}", id, limit);
-        List<ProductRelatedDTO> relatedProducts = productService.findRelatedProducts(id, limit);
-        return ResponseEntity.ok(ApiResponse.success(relatedProducts, "Related products retrieved successfully"));
+        try {
+            List<ProductRelatedDTO> relatedProducts = productService.findRelatedProducts(id, limit);
+            return ResponseEntity.ok(ApiResponse.success(relatedProducts, "Related products retrieved successfully"));
+        } catch (ProductNotFoundException e) {
+            log.warn("Product not found with id: {}", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(404, "Product not found with id: " + id,
+                            "/api/v1/public/products/" + id + "/related"));
+        }
     }
 
     /**
@@ -161,8 +191,15 @@ public class PublicProductController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductDetailDTO>> getProductBySlug(@PathVariable String slug) {
         log.info("Fetching product by slug: {}", slug);
-        ProductDetailDTO product = productService.findPublishedProductBySlug(slug);
-        return ResponseEntity.ok(ApiResponse.success(product, "Product retrieved by slug successfully"));
+        try {
+            ProductDetailDTO product = productService.findPublishedProductBySlug(slug);
+            return ResponseEntity.ok(ApiResponse.success(product, "Product retrieved by slug successfully"));
+        } catch (ProductNotFoundException e) {
+            log.warn("Product not found with slug: {}", slug);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(404, "Product not found with slug: " + slug,
+                            "/api/v1/public/products/slug/" + slug));
+        }
     }
 
     /**
@@ -174,8 +211,15 @@ public class PublicProductController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<String>> getProductSlug(@PathVariable Long id) {
         log.info("Fetching product slug for product ID: {}", id);
-        String slug = productService.getProductSlugById(id);
-        return ResponseEntity.ok(ApiResponse.success(slug, "Product slug retrieved successfully"));
+        try {
+            String slug = productService.getProductSlugById(id);
+            return ResponseEntity.ok(ApiResponse.success(slug, "Product slug retrieved successfully"));
+        } catch (ProductNotFoundException e) {
+            log.warn("Product not found with id: {}", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(404, "Product not found with id: " + id,
+                            "/api/v1/public/products/" + id + "/slug"));
+        }
     }
 
     /**
