@@ -18,7 +18,7 @@ public class WebSecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/api/v1/products/**").authenticated()
+                    .requestMatchers("/api/v1/products/**").permitAll()
                 .anyRequest().permitAll()
             )
             .addFilterBefore(authFilter(), UsernamePasswordAuthenticationFilter.class)

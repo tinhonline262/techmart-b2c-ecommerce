@@ -4,7 +4,9 @@ import com.shopping.microservices.inventory_service.entity.Warehouse;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public interface WarehouseService {
 
@@ -19,5 +21,7 @@ public interface WarehouseService {
     void delete(Long id);
 
     Page<Warehouse> getPageableWarehouses(int pageNo, int pageSize);
+    Map<Long, String> getWarehouseNamesByIds(Set<Long> warehouseIds);
+
 }
 

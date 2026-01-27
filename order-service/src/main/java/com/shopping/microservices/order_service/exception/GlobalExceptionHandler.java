@@ -1,6 +1,8 @@
 package com.shopping.microservices.order_service.exception;
 
+import com.shopping.microservices.common_library.exception.BadRequestException;
 import com.shopping.microservices.order_service.dto.ApiResponse;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -56,6 +58,20 @@ public class GlobalExceptionHandler extends RuntimeException {
     @ExceptionHandler(OutOfStockException.class)
     public ResponseEntity<ApiResponse<String>> handleOutOfStockException(OutOfStockException ex, HttpServletRequest request) {
         log.info("Out of stock exception: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<ApiResponse<String>> handleExpiredJwtException(ExpiredJwtException ex, HttpServletRequest request) {
+        log.info("JWT expired exception: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(HttpStatus.UNAUTHORIZED.value(), "JWT token has expired", request.getRequestURI()));
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiResponse<String>> handleBadRequestException(BadRequestException ex, HttpServletRequest request) {
+        log.info("Bad request exception: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), request.getRequestURI()));
     }

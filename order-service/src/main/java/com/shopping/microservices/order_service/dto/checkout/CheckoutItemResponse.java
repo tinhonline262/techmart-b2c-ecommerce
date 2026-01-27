@@ -9,6 +9,7 @@ import java.time.Instant;
 public record CheckoutItemResponse(
         Long id,
         Long productId,
+        String sku,
         String name,
         String description,
         Integer quantity,
@@ -18,7 +19,6 @@ public record CheckoutItemResponse(
         BigDecimal shipmentTax,
         BigDecimal discountAmount,
         BigDecimal subtotal,
-        Instant createdAt,
-        Instant updatedAt
+        String checkoutId
 ) {
 }

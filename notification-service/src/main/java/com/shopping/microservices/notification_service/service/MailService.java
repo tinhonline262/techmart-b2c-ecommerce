@@ -1,14 +1,15 @@
 package com.shopping.microservices.notification_service.service;
 
+import com.shopping.microservices.common_library.event.OrderEvent;
 import com.shopping.microservices.notification_service.event.*;
 
 public interface MailService {
 
     void sendVerifyUserMail(VerifyUserMailEvent verifyUserMailEvent);
     void sendCompleteUserMail(CompleteUserMailEvent completeUserMailEvent);
-    void sendOrderPlacedMail(OrderSendNotificationEvent orderSendNotificationEvent);
+    void sendOrderPlacedMail(OrderEvent orderSendNotificationEvent);
 
-    void sendOrderCompletedMail(OrderCompletedEvent event);
+    void sendOrderCompletedMail(OrderEvent event);
 
-    void sendOrderCancelledMail(OrderCancelledEvent event);
+    void sendOrderCancelledMail(OrderEvent event);
 }

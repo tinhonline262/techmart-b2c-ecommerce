@@ -91,7 +91,6 @@ logging:
         benmanes:
           caffeine: TRACE
 
-
 identity:
   jwt:
     secret-key: ${JWT_SECRET_KEY:cb3f30b0ec715f1bcbead50dc9d77786c038b569f2f6adb9a9e724e07ffd6c17}
@@ -100,3 +99,23 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka
+
+# Payment Gateway Configuration
+payment:
+  # Payment expiry timeout in minutes
+  expiry:
+    minutes: 30
+
+  # VNPay Configuration
+  vnpay:
+    tmn-code: ${VNPAY_TMN_CODE:SDOSKJ4E}
+    hash-secret: ${VNPAY_HASH_SECRET:7U9C2KGVUC5WHPND14QOPNBBKCIKSLGL}
+    api-url: ${VNPAY_API_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+    return-url: ${VNPAY_RETURN_URL:http://localhost:8088/api/v1/payments/callback/vnpay}
+
+  # COD Configuration
+  cod:
+    enabled: true
+    max-amount: 50000000
+    min-amount: 1000000
+    service-fee: 0

@@ -1,6 +1,7 @@
 package com.shopping.microservices.order_service.service;
 
 import com.shopping.microservices.order_service.dto.checkout.*;
+import com.shopping.microservices.order_service.entity.Checkout;
 
 public interface CheckoutService {
 
@@ -16,9 +17,17 @@ public interface CheckoutService {
      * Update checkout status and progress
      *
      * @param request the status update request
-     * @return the updated checkout response
+     * @return the associated order ID
      */
-    CheckoutResponse updateCheckoutStatus(UpdateCheckoutStatusRequest request);
+    Long updateCheckoutStatus(UpdateCheckoutStatusRequest request);
+
+    /**
+     * Get checkout in PENDING state by ID with all items
+     *
+     * @param checkoutId the checkout ID
+     * @return the checkout response with items
+     */
+    CheckoutResponse getCheckoutPendingStateWithItemsById(String checkoutId);
 
     /**
      * Get checkout by ID with all items
@@ -33,9 +42,8 @@ public interface CheckoutService {
      *
      * @param checkoutId the checkout ID
      * @param request    the payment method update request
-     * @return the updated checkout response
      */
-    CheckoutResponse updatePaymentMethod(String checkoutId, UpdatePaymentMethodRequest request);
+    void updateCheckoutPaymentMethod(String checkoutId, UpdatePaymentMethodRequest request);
 
     /**
      * Calculate and update checkout totals

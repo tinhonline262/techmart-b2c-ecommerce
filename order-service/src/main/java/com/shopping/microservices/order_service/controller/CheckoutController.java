@@ -20,75 +20,50 @@ public class CheckoutController {
 
     private final CheckoutService checkoutService;
 
-    /**
-     * Create a new checkout session with items.
-     * POST /api/v1/public/checkouts
-     *
-     * @param request the checkout creation request
-     * @return created checkout response
-     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ApiResponse<CheckoutResponse>> createCheckout(
             @Valid @RequestBody CreateCheckoutRequest request) {
+        CheckoutResponse response = checkoutService.createCheckout(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(
                         HttpStatus.CREATED.value(),
                         "Checkout created successfully",
-                        null // placeholder: checkoutService.createCheckout(request)
+                        response
                 ));
     }
 
-    /**
-     * Update checkout status and progress.
-     * PUT /api/v1/public/checkouts/status
-     *
-     * @param request the status update request
-     * @return updated checkout response
-     */
     @PutMapping("/status")
-    public ResponseEntity<ApiResponse<CheckoutResponse>> updateCheckoutStatus(
+    public ResponseEntity<ApiResponse<Long>> updateCheckoutStatus(
             @Valid @RequestBody UpdateCheckoutStatusRequest request) {
+        Long orderId = checkoutService.updateCheckoutStatus(request);
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
                 "Checkout status updated successfully",
-                null // placeholder: checkoutService.updateCheckoutStatus(request)
+                orderId
         ));
     }
 
-    /**
-     * Get checkout by ID with all items.
-     * GET /api/v1/public/checkouts/{id}
-     *
-     * @param id the checkout ID
-     * @return checkout response with items
-     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CheckoutResponse>> getCheckoutById(
             @PathVariable("id") String id) {
+        CheckoutResponse response = checkoutService.getCheckoutById(id);
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
                 "Checkout retrieved successfully",
-                null // placeholder: checkoutService.getCheckoutById(id)
+                response
         ));
     }
 
-    /**
-     * Update the payment method for a checkout.
-     * PUT /api/v1/public/checkouts/{id}/payment-method
-     *
-     * @param id      the checkout ID
-     * @param request the payment method update request
-     * @return updated checkout response
-     */
     @PutMapping("/{id}/payment-method")
-    public ResponseEntity<ApiResponse<CheckoutResponse>> updatePaymentMethod(
+    public ResponseEntity<ApiResponse<Void>> updatePaymentMethod(
             @PathVariable("id") String id,
             @Valid @RequestBody UpdatePaymentMethodRequest request) {
+        checkoutService.updateCheckoutPaymentMethod(id, request);
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
                 "Payment method updated successfully",
-                null // placeholder: checkoutService.updatePaymentMethod(id, request)
+                null
         ));
     }
 }

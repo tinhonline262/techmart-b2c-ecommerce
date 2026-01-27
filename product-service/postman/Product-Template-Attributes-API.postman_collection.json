@@ -1,0 +1,702 @@
+{
+  "info": {
+    "_postman_id": "product-template-attributes-api",
+    "name": "Product Template Attributes API",
+    "description": "Complete API collection for testing Product Template Attributes system - Admin creates templates, assigns attributes, creates products, customers view",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. ADMIN - Create Template",
+      "item": [
+        {
+          "name": "Create Template - Laptop",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Laptop\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates"]
+            },
+            "description": "Create a new product template (e.g., Laptop)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Template - Smartphone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Smartphone\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Template - Duplicate Name (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Laptop\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates"]
+            },
+            "description": "Try to create template with duplicate name. Expected: 400 Bad Request (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        },
+        {
+          "name": "List All Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates"]
+            },
+            "description": "Get all templates"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Template by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "1"]
+            },
+            "description": "Get template with all assigned attributes. Expected: 200 OK"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Template by ID - Not Found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/9999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "9999"]
+            },
+            "description": "Get non-existent template. Expected: 404 Not Found (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Template Name",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Premium Laptop\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "1"]
+            },
+            "description": "Update template. Expected: 200 OK with updated template data"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Template - Not Found (404)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/9999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "9999"]
+            },
+            "description": "Update non-existent template. Expected: 404 Not Found (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Template - Duplicate Name (400)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Smartphone\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "1"]
+            },
+            "description": "Try to update template name to an existing name. Expected: 400 Bad Request (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Template",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "1"]
+            },
+            "description": "Delete template. Expected: 200 OK with success message (NOT 204 No Content)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Template - Not Found (404)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/9999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "9999"]
+            },
+            "description": "Delete non-existent template. Expected: 404 Not Found (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. ADMIN - Assign Attributes to Template",
+      "item": [
+        {
+          "name": "Get All Attributes (for IDs)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/products/attributes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "products", "attributes"]
+            },
+            "description": "Get all available attributes to find their IDs"
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Attributes to Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attributes\": [\n    {\n      \"attributeId\": 1,\n      \"displayOrder\": 1\n    },\n    {\n      \"attributeId\": 2,\n      \"displayOrder\": 2\n    },\n    {\n      \"attributeId\": 3,\n      \"displayOrder\": 3\n    },\n    {\n      \"attributeId\": 4,\n      \"displayOrder\": 4\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/1/attributes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "1", "attributes"]
+            },
+            "description": "Assign multiple attributes to a template with display order. Expected: 200 OK or 201 Created"
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Attributes - Template Not Found (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attributes\": [\n    {\n      \"attributeId\": 1,\n      \"displayOrder\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/9999/attributes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "9999", "attributes"]
+            },
+            "description": "Assign attributes to non-existent template. Expected: 404 Not Found (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Template Attributes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/1/attributes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "1", "attributes"]
+            },
+            "description": "Get attributes assigned to a specific template. Expected: 200 OK with attributes list"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Template Attributes - Not Found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/9999/attributes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "9999", "attributes"]
+            },
+            "description": "Get attributes from non-existent template. Expected: 404 Not Found (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Attribute from Template",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/1/attributes/4",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "1", "attributes", "4"]
+            },
+            "description": "Remove a specific attribute from template. Expected: 200 OK with success message (NOT 204 No Content)"
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Attribute - Template Not Found (404)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/9999/attributes/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "9999", "attributes", "1"]
+            },
+            "description": "Remove attribute from non-existent template. Expected: 404 Not Found (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Attribute - Attribute Not Assigned (404)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/admin/templates/1/attributes/9999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "admin", "templates", "1", "attributes", "9999"]
+            },
+            "description": "Remove attribute that's not assigned to template. Expected: 404 Not Found (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. ADMIN - Create Products with Template",
+      "item": [
+        {
+          "name": "Create Product - Dell XPS 13",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dell XPS 13\",\n  \"description\": \"Ultra-portable premium laptop\",\n  \"price\": 1299.99,\n  \"stockQuantity\": 50,\n  \"categoryIds\": [1],\n  \"brandId\": 1,\n  \"templateId\": 1,\n  \"sku\": \"DELL-XPS-13-001\",\n  \"attributes\": [\n    {\n      \"attributeId\": 1,\n      \"value\": \"Intel Core i7-12700H\"\n    },\n    {\n      \"attributeId\": 2,\n      \"value\": \"16GB DDR5\"\n    },\n    {\n      \"attributeId\": 3,\n      \"value\": \"NVIDIA RTX 3050 Ti\"\n    },\n    {\n      \"attributeId\": 4,\n      \"value\": \"512GB NVMe SSD\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/products",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "products"]
+            },
+            "description": "Create product using template with attribute values. Expected: 201 Created with templateId and attributes in response"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product - ASUS ROG Zephyrus G14",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ASUS ROG Zephyrus G14\",\n  \"description\": \"Gaming laptop with RTX 4090\",\n  \"price\": 1899.99,\n  \"stockQuantity\": 30,\n  \"categoryIds\": [1],\n  \"brandId\": 2,\n  \"templateId\": 1,\n  \"sku\": \"ASUS-ROG-G14-001\",\n  \"attributes\": [\n    {\n      \"attributeId\": 1,\n      \"value\": \"Intel Core i9-13900H\"\n    },\n    {\n      \"attributeId\": 2,\n      \"value\": \"32GB LPDDR5\"\n    },\n    {\n      \"attributeId\": 3,\n      \"value\": \"NVIDIA RTX 4090\"\n    },\n    {\n      \"attributeId\": 4,\n      \"value\": \"1TB PCIe Gen 4 SSD\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/products",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "products"]
+            },
+            "description": "Create another product. Expected: 201 Created"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product - Template Not Found (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Product\",\n  \"description\": \"Test product with non-existent template\",\n  \"price\": 999.99,\n  \"stockQuantity\": 10,\n  \"categoryIds\": [1],\n  \"brandId\": 1,\n  \"templateId\": 9999,\n  \"sku\": \"TEST-PRODUCT-001\",\n  \"attributes\": []\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/products",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "products"]
+            },
+            "description": "Try to create product with non-existent template. Expected: 400 Bad Request (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product - Change Attributes",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dell XPS 13 Updated\",\n  \"description\": \"Ultra-portable premium laptop - Updated specs\",\n  \"price\": 1349.99,\n  \"stockQuantity\": 45,\n  \"categoryIds\": [1],\n  \"brandId\": 1,\n  \"templateId\": 1,\n  \"sku\": \"DELL-XPS-13-001\",\n  \"attributes\": [\n    {\n      \"attributeId\": 1,\n      \"value\": \"Intel Core i7-13700H\"\n    },\n    {\n      \"attributeId\": 2,\n      \"value\": \"32GB DDR5\"\n    },\n    {\n      \"attributeId\": 3,\n      \"value\": \"NVIDIA RTX 4070\"\n    },\n    {\n      \"attributeId\": 4,\n      \"value\": \"1TB NVMe SSD\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/products/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "products", "1"]
+            },
+            "description": "Update product. Expected: 200 OK with success message"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/products/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "products", "1"]
+            },
+            "description": "Delete product. Expected: 200 OK with success message (NOT 204 No Content)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product - Not Found (404)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/products/9999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "products", "9999"]
+            },
+            "description": "Delete non-existent product. Expected: 404 Not Found (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. CUSTOMER - View Templates",
+      "item": [
+        {
+          "name": "List All Templates (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/public/templates",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "public", "templates"]
+            },
+            "description": "Customer views all available product templates"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Template Details (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/public/templates/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "public", "templates", "1"]
+            },
+            "description": "Customer views template with all its attributes. Expected: 200 OK"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Template Details - Not Found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/public/templates/9999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "public", "templates", "9999"]
+            },
+            "description": "Get non-existent template (public). Expected: 404 Not Found (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Template Attributes (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/public/templates/1/attributes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "public", "templates", "1", "attributes"]
+            },
+            "description": "Customer views attributes for a template. Expected: 200 OK"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Template Attributes - Not Found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/public/templates/9999/attributes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "public", "templates", "9999", "attributes"]
+            },
+            "description": "Get attributes from non-existent template (public). Expected: 404 Not Found (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. CUSTOMER - View Products",
+      "item": [
+        {
+          "name": "List All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/public/products",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "public", "products"]
+            },
+            "description": "Customer views all products (includes templateId)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/public/products/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "public", "products", "1"]
+            },
+            "description": "Customer views product details with template reference. Expected: 200 OK"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product Details - Not Found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/public/products/9999",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "public", "products", "9999"]
+            },
+            "description": "Get non-existent product (public). Expected: 404 Not Found (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product Attributes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/products/1/attributes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "products", "1", "attributes"]
+            },
+            "description": "Customer views product's attribute values (CPU, RAM, GPU, Storage, etc.). Expected: 200 OK"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product Attributes - Not Found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/products/9999/attributes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["api", "v1", "products", "9999", "attributes"]
+            },
+            "description": "Get attributes from non-existent product. Expected: 404 Not Found (NOT 500 Internal Server Error)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

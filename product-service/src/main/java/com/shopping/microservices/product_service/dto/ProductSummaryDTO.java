@@ -9,6 +9,7 @@ public record ProductSummaryDTO(
         String slug,
         String sku,
         BigDecimal price,
+        String description,
         BigDecimal oldPrice,
         BigDecimal specialPrice,
         String thumbnailUrl,

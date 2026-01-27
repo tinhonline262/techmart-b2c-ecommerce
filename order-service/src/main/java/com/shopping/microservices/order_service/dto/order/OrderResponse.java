@@ -1,6 +1,8 @@
 package com.shopping.microservices.order_service.dto.order;
 
 import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -9,7 +11,7 @@ import java.util.Map;
 
 @Builder
 public record OrderResponse(
-        Long id,
+        Long orderId,
         String email,
         String note,
         String promotionCode,

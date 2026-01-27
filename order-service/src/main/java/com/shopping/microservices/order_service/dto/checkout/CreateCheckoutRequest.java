@@ -20,8 +20,6 @@ public record CreateCheckoutRequest(
         @Size(max = 100, message = "Promotion code cannot exceed 100 characters")
         String promotionCode,
 
-        String customerId,
-
         String shipmentMethodId,
 
         String paymentMethodId,
@@ -30,8 +28,6 @@ public record CreateCheckoutRequest(
 
         @NotEmpty(message = "Checkout must have at least one item")
         @Valid
-        List<CheckoutItemRequest> items,
-
-        Map<String, Object> attributes
+        List<CheckoutItemRequest> items
 ) {
 }

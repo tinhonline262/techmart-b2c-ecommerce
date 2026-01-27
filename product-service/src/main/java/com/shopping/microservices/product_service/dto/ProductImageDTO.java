@@ -13,6 +13,7 @@ public record ProductImageDTO(
         Long id,
         Long productId,
         String imageUrl,
+        String cloudinaryPublicId,
         String altText,
         boolean isPrimary,
         Integer displayOrder,

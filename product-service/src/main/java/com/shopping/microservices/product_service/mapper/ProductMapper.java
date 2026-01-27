@@ -2,6 +2,12 @@ package com.shopping.microservices.product_service.mapper;
 
 import com.shopping.microservices.product_service.dto.*;
 import com.shopping.microservices.product_service.entity.*;
+import com.shopping.microservices.product_service.repository.ProductCategoryRepository;
+import com.shopping.microservices.product_service.repository.ProductImageRepository;
+import com.shopping.microservices.product_service.repository.ProductOptionRepository;
+import com.shopping.microservices.product_service.repository.ProductOptionValueRepository;
+import com.shopping.microservices.product_service.repository.ProductOptionCombinationRepository;
+import com.shopping.microservices.product_service.repository.ProductAttributeValueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -20,12 +26,21 @@ public class ProductMapper {
     private final BrandMapper brandMapper;
     private final CategoryMapper categoryMapper;
     private final ProductImageMapper productImageMapper;
+    private final ProductCategoryRepository productCategoryRepository;
+    private final ProductImageRepository productImageRepository;
+    private final ProductOptionRepository productOptionRepository;
+    private final ProductOptionValueRepository productOptionValueRepository;
+    private final ProductOptionCombinationRepository productOptionCombinationRepository;
+    private final ProductOptionValueMapper productOptionValueMapper;
+    private final ProductOptionCombinationMapper productOptionCombinationMapper;
+    private final ProductAttributeValueRepository productAttributeValueRepository;
 
     /**
      * Map ProductCreationDTO to Product entity
      */
     public Product toEntity(ProductCreationDTO dto) {
-        if (dto == null) return null;
+        if (dto == null)
+            return null;
 
         return Product.builder()
                 .name(dto.name())
@@ -42,6 +57,7 @@ public class ProductMapper {
                 .isFeatured(dto.isFeatured() != null ? dto.isFeatured() : false)
                 .isVisibleIndividually(dto.isVisibleIndividually() != null ? dto.isVisibleIndividually() : true)
                 .brandId(dto.brandId())
+                .templateId(dto.templateId())
                 .metaTitle(dto.metaTitle())
                 .metaKeyword(dto.metaKeywords())
                 .metaDescription(dto.metaDescription())
@@ -55,27 +71,48 @@ public class ProductMapper {
      * Update Product entity from ProductUpdateDTO
      */
     public void updateEntity(Product product, ProductUpdateDTO dto) {
-        if (dto == null) return;
+        if (dto == null)
+            return;
 
-        if (dto.name() != null) product.setName(dto.name());
-        if (dto.slug() != null) product.setSlug(dto.slug());
-        if (dto.sku() != null) product.setSku(dto.sku());
-        if (dto.shortDescription() != null) product.setShortDescription(dto.shortDescription());
-        if (dto.description() != null) product.setDescription(dto.description());
-        if (dto.specification() != null) product.setSpecification(dto.specification());
-        if (dto.price() != null) product.setPrice(dto.price());
-        if (dto.stockQuantity() != null) product.setStockQuantity(Long.valueOf(dto.stockQuantity()));
-        if (dto.stockTrackingEnabled() != null) product.setStockTrackingEnabled(dto.stockTrackingEnabled());
-        if (dto.isAllowedToOrder() != null) product.setIsAllowedToOrder(dto.isAllowedToOrder());
-        if (dto.isPublished() != null) product.setIsPublished(dto.isPublished());
-        if (dto.isFeatured() != null) product.setIsFeatured(dto.isFeatured());
-        if (dto.isVisibleIndividually() != null) product.setIsVisibleIndividually(dto.isVisibleIndividually());
-        if (dto.brandId() != null) product.setBrandId(dto.brandId());
-        if (dto.metaTitle() != null) product.setMetaTitle(dto.metaTitle());
-        if (dto.metaKeywords() != null) product.setMetaKeyword(dto.metaKeywords());
-        if (dto.metaDescription() != null) product.setMetaDescription(dto.metaDescription());
-        if (dto.weight() != null) product.setWeight(dto.weight());
-        
+        if (dto.name() != null)
+            product.setName(dto.name());
+        if (dto.slug() != null)
+            product.setSlug(dto.slug());
+        if (dto.sku() != null)
+            product.setSku(dto.sku());
+        if (dto.shortDescription() != null)
+            product.setShortDescription(dto.shortDescription());
+        if (dto.description() != null)
+            product.setDescription(dto.description());
+        if (dto.specification() != null)
+            product.setSpecification(dto.specification());
+        if (dto.price() != null)
+            product.setPrice(dto.price());
+        if (dto.stockQuantity() != null)
+            product.setStockQuantity(Long.valueOf(dto.stockQuantity()));
+        if (dto.stockTrackingEnabled() != null)
+            product.setStockTrackingEnabled(dto.stockTrackingEnabled());
+        if (dto.isAllowedToOrder() != null)
+            product.setIsAllowedToOrder(dto.isAllowedToOrder());
+        if (dto.isPublished() != null)
+            product.setIsPublished(dto.isPublished());
+        if (dto.isFeatured() != null)
+            product.setIsFeatured(dto.isFeatured());
+        if (dto.isVisibleIndividually() != null)
+            product.setIsVisibleIndividually(dto.isVisibleIndividually());
+        if (dto.brandId() != null)
+            product.setBrandId(dto.brandId());
+        if (dto.templateId() != null)
+            product.setTemplateId(dto.templateId());
+        if (dto.metaTitle() != null)
+            product.setMetaTitle(dto.metaTitle());
+        if (dto.metaKeywords() != null)
+            product.setMetaKeyword(dto.metaKeywords());
+        if (dto.metaDescription() != null)
+            product.setMetaDescription(dto.metaDescription());
+        if (dto.weight() != null)
+            product.setWeight(dto.weight());
+
         product.setUpdatedAt(Instant.now());
     }
 
@@ -83,7 +120,29 @@ public class ProductMapper {
      * Map Product entity to ProductDTO
      */
     public ProductDTO toDTO(Product product) {
-        if (product == null) return null;
+        if (product == null)
+            return null;
+
+        // load categories associated with the product
+        var categories = productCategoryRepository.findByProductId(product.getId()).stream()
+                .map(pc -> categoryMapper.toDTO(pc.getCategory()))
+                .collect(Collectors.toList());
+
+        // load images associated with the product
+        var images = productImageRepository.findByProductId(product.getId()).stream()
+                .map(productImageMapper::toDTO)
+                .collect(Collectors.toList());
+
+        // load attributes associated with the product
+        var attributes = productAttributeValueRepository.findByProductId(product.getId()).stream()
+                .map(pav -> new ProductAttributeValueDTO(
+                        pav.getProductAttribute().getId(),
+                        pav.getProductAttribute().getName(),
+                        pav.getProductAttribute().getProductAttributeGroup() != null
+                                ? pav.getProductAttribute().getProductAttributeGroup().getName()
+                                : "",
+                        pav.getValue()))
+                .collect(Collectors.toList());
 
         return new ProductDTO(
                 product.getId(),
@@ -103,9 +162,11 @@ public class ProductMapper {
                 Boolean.TRUE.equals(product.getIsPublished()),
                 Boolean.TRUE.equals(product.getIsFeatured()),
                 Boolean.TRUE.equals(product.getIsVisibleIndividually()),
+                product.getTemplateId(),
+                attributes,
                 null, // brand - to be loaded separately
-                Collections.emptyList(), // categories - to be loaded separately
-                Collections.emptyList(), // images - to be loaded separately
+                categories,
+                images,
                 product.getMetaTitle(),
                 product.getMetaDescription(),
                 product.getMetaKeyword(),
@@ -113,15 +174,15 @@ public class ProductMapper {
                 product.getWeight(),
                 null, // dimensions
                 toLocalDateTime(product.getCreatedAt()),
-                toLocalDateTime(product.getUpdatedAt())
-        );
+                toLocalDateTime(product.getUpdatedAt()));
     }
 
     /**
      * Map Product entity to ProductSummaryDTO
      */
     public ProductSummaryDTO toSummaryDTO(Product product) {
-        if (product == null) return null;
+        if (product == null)
+            return null;
 
         return new ProductSummaryDTO(
                 product.getId(),
@@ -129,6 +190,7 @@ public class ProductMapper {
                 product.getSlug(),
                 product.getSku(),
                 product.getPrice(),
+                product.getShortDescription(),
                 null, // oldPrice
                 null, // specialPrice
                 null, // thumbnailUrl
@@ -138,7 +200,7 @@ public class ProductMapper {
                 Boolean.TRUE.equals(product.getIsPublished()),
                 Boolean.TRUE.equals(product.getIsFeatured()),
                 null, // averageRating
-                null  // reviewCount
+                null // reviewCount
         );
     }
 
@@ -146,7 +208,69 @@ public class ProductMapper {
      * Map Product entity to ProductDetailDTO
      */
     public ProductDetailDTO toDetailDTO(Product product) {
-        if (product == null) return null;
+        if (product == null)
+            return null;
+
+        Long productId = product.getId();
+
+        // categories
+        var categories = productCategoryRepository.findByProductId(productId).stream()
+                .map(pc -> categoryMapper.toDTO(pc.getCategory()))
+                .collect(Collectors.toList());
+
+        // images
+        var images = productImageRepository.findByProductId(productId).stream()
+                .map(productImageMapper::toDTO)
+                .collect(Collectors.toList());
+
+        // options with values
+        var options = productOptionRepository.findByProductId(productId);
+        var optionDTOs = options.stream().map(opt -> {
+            var values = productOptionValueRepository.findByProductOptionId(opt.getId());
+            var valueDTOs = productOptionValueMapper.toDTOList(values);
+            return new com.shopping.microservices.product_service.dto.ProductOptionDTO(
+                    opt.getId(),
+                    opt.getName(),
+                    valueDTOs,
+                    null,
+                    null);
+        }).collect(Collectors.toList());
+
+        // build a lookup for option values by (optionName,value)
+        var allOptionValues = productOptionValueRepository.findByProductOptionProductId(productId);
+        var optionValueLookup = allOptionValues.stream()
+                .map(productOptionValueMapper::toDTO)
+                .collect(Collectors.toMap(v -> v.optionName() + "::" + v.value(), v -> v));
+
+        // combinations with option values
+        var combinations = productOptionCombinationRepository.findByProductId(productId);
+        var combinationDTOs = combinations.stream().map(c -> {
+            List<com.shopping.microservices.product_service.dto.ProductOptionValueDTO> combValues = new ArrayList<>();
+            if (c.getValue() != null && !c.getValue().isBlank()) {
+                var parts = c.getValue().split(";");
+                for (String part : parts) {
+                    var kv = part.split("=", 2);
+                    if (kv.length == 2) {
+                        var optName = kv[0].trim();
+                        var val = kv[1].trim();
+                        var key = optName + "::" + val;
+                        var v = optionValueLookup.get(key);
+                        if (v != null)
+                            combValues.add(v);
+                    }
+                }
+            }
+            return new com.shopping.microservices.product_service.dto.ProductOptionCombinationDTO(
+                    c.getId(),
+                    c.getProduct() != null ? c.getProduct().getId() : null,
+                    c.getSku(),
+                    null,
+                    null,
+                    null,
+                    combValues,
+                    null,
+                    null);
+        }).collect(Collectors.toList());
 
         return new ProductDetailDTO(
                 product.getId(),
@@ -164,10 +288,10 @@ public class ProductMapper {
                 Boolean.TRUE.equals(product.getIsPublished()),
                 Boolean.TRUE.equals(product.getIsFeatured()),
                 null, // brand
-                Collections.emptyList(), // categories
-                Collections.emptyList(), // images
-                Collections.emptyList(), // options
-                Collections.emptyList(), // attributes
+                categories,
+                images,
+                optionDTOs,
+                Collections.emptyList(), // attributes - will be fetched from repository if needed
                 product.getMetaTitle(),
                 product.getMetaDescription(),
                 product.getMetaKeyword(),
@@ -177,15 +301,15 @@ public class ProductMapper {
                 null, // averageRating
                 null, // reviewCount
                 toLocalDateTime(product.getCreatedAt()),
-                toLocalDateTime(product.getUpdatedAt())
-        );
+                toLocalDateTime(product.getUpdatedAt()));
     }
 
     /**
      * Map Product entity to FeaturedProductDTO
      */
     public FeaturedProductDTO toFeaturedDTO(Product product) {
-        if (product == null) return null;
+        if (product == null)
+            return null;
 
         return new FeaturedProductDTO(
                 product.getId(),
@@ -207,7 +331,8 @@ public class ProductMapper {
      * Map Product entity to WarehouseProductDTO
      */
     public WarehouseProductDTO toWarehouseDTO(Product product) {
-        if (product == null) return null;
+        if (product == null)
+            return null;
 
         return new WarehouseProductDTO(
                 product.getId(),
@@ -220,7 +345,7 @@ public class ProductMapper {
                 null, // warehouseLocation
                 product.getStockQuantity() != null && product.getStockQuantity() < 10, // lowStockAlert
                 10, // reorderPoint
-                50  // reorderQuantity
+                50 // reorderQuantity
         );
     }
 
@@ -228,7 +353,8 @@ public class ProductMapper {
      * Convert Instant to LocalDateTime
      */
     private LocalDateTime toLocalDateTime(Instant instant) {
-        if (instant == null) return null;
+        if (instant == null)
+            return null;
         return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
     }
 
@@ -236,7 +362,8 @@ public class ProductMapper {
      * Map list of Products to list of ProductDTOs
      */
     public List<ProductDTO> toDTOList(List<Product> products) {
-        if (products == null) return Collections.emptyList();
+        if (products == null)
+            return Collections.emptyList();
         return products.stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -246,7 +373,8 @@ public class ProductMapper {
      * Map list of Products to list of ProductSummaryDTOs
      */
     public List<ProductSummaryDTO> toSummaryDTOList(List<Product> products) {
-        if (products == null) return Collections.emptyList();
+        if (products == null)
+            return Collections.emptyList();
         return products.stream()
                 .map(this::toSummaryDTO)
                 .collect(Collectors.toList());

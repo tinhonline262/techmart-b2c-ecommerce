@@ -30,32 +30,6 @@ public class KafkaConsumerConfig {
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         return props;
     }
-
-    //------------------ Order Placed Event Consumer Configuration ------------------//
-    @Bean
-    public ConsumerFactory<String, OrderSendNotificationEvent> orderPlacedEventConsumerFactory() {
-//        Map<String, Object> props = new HashMap<>();
-//        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-//        props.put(ConsumerConfig.GROUP_ID_CONFIG, "notification-group");
-//        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-//        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-//        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-
-        return new DefaultKafkaConsumerFactory<>(
-                baseProps("notification-service-order-group"),
-                new StringDeserializer(),
-                new JsonDeserializer<>(OrderSendNotificationEvent.class, false));
-
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, OrderSendNotificationEvent> orderCreatedEventListenerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, OrderSendNotificationEvent> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(orderPlacedEventConsumerFactory());
-        return factory;
-    }
-
     //------------------ Verify User Mail Event Consumer Configuration ------------------//
 
     @Bean
@@ -87,50 +61,6 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, CompleteUserMailEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(completeUserMailEventConsumerFactory());
-        return factory;
-    }
-
-    @Bean
-    public ConsumerFactory<String, OrderCancelledEvent> orderCancelledConsumerFactory() {
-        return new DefaultKafkaConsumerFactory<>(
-                baseProps("notification-service-order-cancelled"),
-                new StringDeserializer(),
-                new JsonDeserializer<>(OrderCancelledEvent.class, false)
-        );
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, OrderCancelledEvent>
-    orderCancelledKafkaListenerContainerFactory() {
-
-        ConcurrentKafkaListenerContainerFactory<String, OrderCancelledEvent> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-
-        factory.setConsumerFactory(orderCancelledConsumerFactory());
-        factory.getContainerProperties()
-                .setAckMode(org.springframework.kafka.listener.ContainerProperties.AckMode.MANUAL);
-        return factory;
-    }
-
-    @Bean
-    public ConsumerFactory<String, OrderCompletedEvent> orderCompletedConsumerFactory() {
-        return new DefaultKafkaConsumerFactory<>(
-                baseProps("notification-service-order-completed"),
-                new StringDeserializer(),
-                new JsonDeserializer<>(OrderCompletedEvent.class, false)
-        );
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, OrderCompletedEvent>
-    orderCompletedKafkaListenerContainerFactory() {
-
-        ConcurrentKafkaListenerContainerFactory<String, OrderCompletedEvent> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-
-        factory.setConsumerFactory(orderCompletedConsumerFactory());
-        factory.getContainerProperties()
-                .setAckMode(org.springframework.kafka.listener.ContainerProperties.AckMode.MANUAL);
         return factory;
     }
 

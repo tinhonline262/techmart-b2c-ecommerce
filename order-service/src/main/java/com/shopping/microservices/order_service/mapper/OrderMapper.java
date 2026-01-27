@@ -1,10 +1,14 @@
 package com.shopping.microservices.order_service.mapper;
 
+import com.shopping.microservices.order_service.dto.checkout.CheckoutResponse;
 import com.shopping.microservices.order_service.dto.order.*;
 import com.shopping.microservices.order_service.entity.Order;
 import com.shopping.microservices.order_service.entity.OrderAddress;
 import com.shopping.microservices.order_service.entity.OrderItem;
+import com.shopping.microservices.order_service.enumeration.OrderProgress;
 import com.shopping.microservices.order_service.enumeration.OrderStatus;
+import com.shopping.microservices.order_service.enumeration.PaymentStatus;
+import com.shopping.microservices.order_service.enumeration.ShipmentStatus;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -13,28 +17,27 @@ import java.util.stream.Collectors;
 
 @Component
 public class OrderMapper {
-
     // ==================== Order Entity <-> DTO ====================
 
-    public Order toEntity(CreateOrderRequest request) {
-        if (request == null) {
+    public Order toEntity(CheckoutResponse checkout) {
+        if (checkout == null) {
             return null;
         }
-        
+
         Order order = new Order();
-        order.setEmail(request.email());
-        order.setNote(request.note());
-        order.setPromotionCode(request.promotionCode());
-        order.setCustomerId(request.customerId());
-        order.setShipmentMethodId(request.shipmentMethodId());
-        order.setPaymentMethodId(request.paymentMethodId());
-        order.setAttributes(request.attributes());
+        order.setEmail(checkout.email());
+        order.setCheckoutId(checkout.id());
+        order.setNote(checkout.note());
+        order.setPromotionCode(checkout.promotionCode());
+        order.setCustomerId(checkout.customerId());
+        order.setShipmentMethodId(checkout.shipmentMethodId());
+        order.setPaymentMethodId(checkout.paymentMethodId());
         order.setStatus(OrderStatus.PENDING);
-        order.setProgress("CREATED");
-        order.setPaymentStatus("PENDING");
-        order.setShipmentStatus("PENDING");
-        order.setNumberItem(request.items() != null ? request.items().size() : 0);
-        
+        order.setPaymentStatus(PaymentStatus.PENDING);
+        order.setShipmentStatus(ShipmentStatus.PENDING);
+        order.setProgress(OrderProgress.CREATED);
+        order.setNumberItem(checkout.items() != null ? checkout.items().size() : 0);
+
         return order;
     }
 
@@ -54,22 +57,22 @@ public class OrderMapper {
             order.getTotalShipmentTax(),
             order.getTotalTax(),
             order.getTotalDiscountAmount(),
-            order.getStatus(),
+            order.getStatus() != null ? order.getStatus().name() : null,
             order.getShipmentMethodId(),
-            order.getShipmentStatus(),
+            order.getShipmentStatus() != null ? order.getShipmentStatus().name() : null,
+            order.getPaymentStatus() != null ? order.getPaymentStatus().name() : null,
+            order.getPaymentId(),
             order.getCheckoutId(),
             order.getPaymentMethodId(),
-            order.getPaymentStatus(),
-            order.getPaymentId(),
-            order.getProgress(),
+            order.getProgress() != null ? order.getProgress().name() : null,
             order.getCustomerId(),
             order.getRejectReason(),
-            order.getLastError(),
+            null,
+            null,
             order.getAttributes(),
+            order.getLastError(),
             order.getCreatedAt(),
-            order.getUpdatedAt(),
-            null,  // items
-            null   // shippingAddress
+            order.getUpdatedAt()
         );
     }
 
@@ -89,22 +92,22 @@ public class OrderMapper {
             order.getTotalShipmentTax(),
             order.getTotalTax(),
             order.getTotalDiscountAmount(),
-            order.getStatus(),
+            order.getStatus() != null ? order.getStatus().name() : null,
             order.getShipmentMethodId(),
-            order.getShipmentStatus(),
+            order.getShipmentStatus() != null ? order.getShipmentStatus().name() : null,
+            order.getPaymentStatus() != null ? order.getPaymentStatus().name() : null,
+            order.getPaymentId(),
             order.getCheckoutId(),
             order.getPaymentMethodId(),
-            order.getPaymentStatus(),
-            order.getPaymentId(),
-            order.getProgress(),
+            order.getProgress() != null ? order.getProgress().name() : null,
             order.getCustomerId(),
             order.getRejectReason(),
-            order.getLastError(),
-            order.getAttributes(),
-            order.getCreatedAt(),
-            order.getUpdatedAt(),
             items,
-            shippingAddress
+            shippingAddress,
+            order.getAttributes(),
+            order.getLastError(),
+            order.getCreatedAt(),
+            order.getUpdatedAt()
         );
     }
 
@@ -118,13 +121,11 @@ public class OrderMapper {
             order.getEmail(),
             order.getNumberItem(),
             order.getTotalAmount(),
-            order.getStatus(),
-            order.getPaymentStatus(),
-            order.getShipmentStatus(),
-            order.getProgress(),
+            order.getStatus() != null ? order.getStatus().name() : null,
+            order.getPaymentStatus() != null ? order.getPaymentStatus().name() : null,
+            order.getShipmentStatus() != null ? order.getShipmentStatus().name() : null,
             order.getCustomerId(),
-            order.getCreatedAt(),
-            order.getUpdatedAt()
+            order.getCreatedAt()
         );
     }
 
@@ -144,7 +145,7 @@ public class OrderMapper {
         }
         
         if (request.paymentStatus() != null) {
-            order.setPaymentStatus(request.paymentStatus());
+            order.setPaymentStatus(PaymentStatus.valueOf(request.paymentStatus()));
         }
         if (request.paymentId() != null) {
             order.setPaymentId(request.paymentId());
@@ -163,15 +164,8 @@ public class OrderMapper {
         
         OrderItem item = new OrderItem();
         item.setProductId(request.productId());
-        item.setVariantId(request.variantId());
         item.setQuantity(request.quantity());
-        item.setPrice(request.price());
-        item.setTaxAmount(request.taxAmount());
-        item.setShipmentFee(request.shipmentFee());
-        item.setShipmentTax(request.shipmentTax());
-        item.setDiscountAmount(request.discountAmount());
         item.setStatus("PENDING");
-        
         return item;
     }
 
@@ -193,16 +187,20 @@ public class OrderMapper {
         return new OrderItemResponse(
             item.getId(),
             item.getProductId(),
-            item.getVariantId(),
+            item.getName(),
+            item.getDescription(),
             item.getQuantity(),
             item.getPrice(),
+            item.getDiscountAmount(),
             item.getTaxAmount(),
+            item.getTaxPercent(),
             item.getShipmentFee(),
             item.getShipmentTax(),
-            item.getDiscountAmount(),
-            calculateItemSubtotal(item),
             item.getStatus(),
-            item.getProcessingState()
+            calculateItemSubtotal(item),
+            item.getProcessingState(),
+            item.getCreatedAt(),
+            item.getUpdatedAt()
         );
     }
 
@@ -224,14 +222,18 @@ public class OrderMapper {
         }
         
         OrderAddress address = new OrderAddress();
-        address.setReceiverName(request.receiverName());
-        address.setReceiverPhone(request.receiverPhone());
+        address.setContactName(request.contactName());
+        address.setPhone(request.phone());
         address.setAddressLine1(request.addressLine1());
         address.setAddressLine2(request.addressLine2());
         address.setCity(request.city());
-        address.setState(request.state());
-        address.setCountry(request.country());
-        address.setPostalCode(request.postalCode());
+        address.setZipCode(request.zipCode());
+        address.setDistrictId(request.districtId());
+        address.setDistrictName(request.districtName());
+        address.setStateOrProvinceId(request.stateOrProvinceId());
+        address.setStateOrProvinceName(request.stateOrProvinceName());
+        address.setCountryId(request.countryId());
+        address.setCountryName(request.countryName());
         
         return address;
     }
@@ -243,14 +245,18 @@ public class OrderMapper {
         
         return new OrderAddressResponse(
             address.getId(),
-            address.getReceiverName(),
-            address.getReceiverPhone(),
+            address.getContactName(),
+            address.getPhone(),
             address.getAddressLine1(),
             address.getAddressLine2(),
             address.getCity(),
-            address.getState(),
-            address.getCountry(),
-            address.getPostalCode()
+            address.getZipCode(),
+            address.getDistrictId(),
+            address.getDistrictName(),
+            address.getStateOrProvinceId(),
+            address.getStateOrProvinceName(),
+            address.getCountryId(),
+            address.getCountryName()
         );
     }
 

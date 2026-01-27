@@ -24,12 +24,6 @@ public record CreateOrderRequest(
         @Size(max = 100, message = "Promotion code cannot exceed 100 characters")
         String promotionCode,
 
-        String customerId,
-
-        String shipmentMethodId,
-
-        String paymentMethodId,
-
         @Valid
         OrderAddressRequest shippingAddress,
 
