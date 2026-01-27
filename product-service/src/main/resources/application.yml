@@ -123,6 +123,9 @@ cloudinary:
   api-secret: ${CLOUDINARY_API_SECRET:rNqLqtyKHURj4QI3F2T64szAm5w}
 
 eureka:
+  instance:
+    prefer-ip-address: false  # ← Đổi thành false
+    hostname: localhost        # ← Thêm dòng này
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka

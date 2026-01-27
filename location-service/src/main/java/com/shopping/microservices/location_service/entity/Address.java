@@ -50,6 +50,13 @@ public class Address {
     @JoinColumn(name = "country_id", nullable = false)
     private Country country;
 
+    // THÊM 2 FIELDS NÀY
+    @Column(name = "state_or_province_id")
+    private Long stateOrProvinceId;
+
+    @Column(name = "district_id")
+    private Long districtId;
+
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
     private Instant createdAt;
@@ -57,5 +64,4 @@ public class Address {
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at")
     private Instant updatedAt;
-
 }

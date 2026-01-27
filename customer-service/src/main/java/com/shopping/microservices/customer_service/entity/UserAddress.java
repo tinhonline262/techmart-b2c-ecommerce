@@ -16,6 +16,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @Table(name = "user_address", schema = "customer_service_db")
 public class UserAddress {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -30,16 +31,20 @@ public class UserAddress {
     @Column(name = "address_id", nullable = false)
     private Long addressId;
 
-    @ColumnDefault("1")
+    @ColumnDefault("true")
     @Column(name = "is_active")
     private Boolean isActive;
 
+    // ✅ FIELD BỊ THIẾU GÂY LỖI
+    @ColumnDefault("false")
+    @Column(name = "is_default")
+    private Boolean isDefault;
+
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at")
     private Instant updatedAt;
-
 }
