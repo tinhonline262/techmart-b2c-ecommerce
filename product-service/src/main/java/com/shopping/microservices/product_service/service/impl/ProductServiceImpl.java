@@ -2,6 +2,7 @@ package com.shopping.microservices.product_service.service.impl;
 
 import com.shopping.microservices.common_library.event.InventoryEvent;
 import com.shopping.microservices.product_service.dto.*;
+import com.shopping.microservices.product_service.dto.attribute.ProductAttributeValueCreationDTO;
 import com.shopping.microservices.product_service.exception.CategoryNotFoundException;
 import com.shopping.microservices.product_service.exception.ProductNotFoundException;
 import com.shopping.microservices.product_service.mapper.ProductMapper;
@@ -11,6 +12,7 @@ import com.shopping.microservices.product_service.mapper.ProductOptionValueMappe
 import com.shopping.microservices.product_service.entity.ProductCategory;
 import com.shopping.microservices.product_service.repository.*;
 import com.shopping.microservices.product_service.service.ProductService;
+import com.shopping.microservices.product_service.service.ProductTemplateService;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +41,8 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRelatedRepository productRelatedRepository;
     private final ProductOptionCombinationMapper productOptionCombinationMapper;
     private final ProductRelatedMapper productRelatedMapper;
+    private final ProductAttributeValueRepository productAttributeValueRepository;
+    private final ProductTemplateService productTemplateService;
     private final ProductOptionValueRepository productOptionValueRepository;
     private final ProductOptionValueMapper productOptionValueMapper;
 
@@ -80,6 +84,15 @@ public class ProductServiceImpl implements ProductService {
     @CacheEvict(value = "products_all", allEntries = true)
     public ProductDTO createProduct(ProductCreationDTO productCreationDTO) {
         log.info("Creating product: {}", productCreationDTO.name());
+
+        // Validate template if provided
+        if (productCreationDTO.templateId() != null) {
+            var template = productTemplateService.getTemplateById(productCreationDTO.templateId());
+            if (template.isEmpty()) {
+                throw new IllegalArgumentException("Template not found with id: " + productCreationDTO.templateId());
+            }
+        }
+
         var product = productMapper.toEntity(productCreationDTO);
         var savedProduct = productRepository.save(product);
 
@@ -96,9 +109,17 @@ public class ProductServiceImpl implements ProductService {
             });
         }
 
-        // Images: creation DTO currently contains image URLs; mapping to existing product_image table requires image IDs.
+        // Save product attribute values if provided
+        if (productCreationDTO.attributes() != null && !productCreationDTO.attributes().isEmpty()) {
+            saveProductAttributeValues(savedProduct.getId(), productCreationDTO.attributes());
+        }
+
+        // Images: creation DTO currently contains image URLs; mapping to existing
+        // product_image table requires image IDs.
         if (productCreationDTO.images() != null && !productCreationDTO.images().isEmpty()) {
-            log.warn("Product images provided but image persistence by URL is not implemented; skipping images for product {}", savedProduct.getId());
+            log.warn(
+                    "Product images provided but image persistence by URL is not implemented; skipping images for product {}",
+                    savedProduct.getId());
         }
 
         log.info("Product created: {}", savedProduct.getId());
@@ -107,7 +128,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {"productBySku", "products_all"}, allEntries = true)
+    @CacheEvict(value = { "productBySku", "products_all" }, allEntries = true)
     public ProductDTO reverseProductStockBySku(ProductReduceStockDTO productDTO) {
         log.info("Reversing product stock by SKU: {}", productDTO.sku());
         var product = productRepository.findBySku(productDTO.sku())
@@ -123,18 +144,33 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {"productBySku", "products_all"}, allEntries = true)
+    @CacheEvict(value = { "productBySku", "products_all" }, allEntries = true)
     public ProductDTO updateProduct(Long id, ProductUpdateDTO productUpdateDTO) {
         var product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found: " + id));
+
+        // Validate template if provided
+        if (productUpdateDTO.templateId() != null) {
+            var template = productTemplateService.getTemplateById(productUpdateDTO.templateId());
+            if (template.isEmpty()) {
+                throw new IllegalArgumentException("Template not found with id: " + productUpdateDTO.templateId());
+            }
+        }
+
         productMapper.updateEntity(product, productUpdateDTO);
         var saved = productRepository.save(product);
+
+        // Update product attribute values if provided
+        if (productUpdateDTO.attributes() != null && !productUpdateDTO.attributes().isEmpty()) {
+            updateProductAttributeValues(id, productUpdateDTO.attributes());
+        }
+
         return productMapper.toDTO(saved);
     }
 
     @Override
     @Transactional
-    @CacheEvict(value = {"productBySku", "products_all"}, allEntries = true)
+    @CacheEvict(value = { "productBySku", "products_all" }, allEntries = true)
     public void deleteProduct(Long id) {
         var product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found: " + id));
@@ -143,7 +179,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {"productBySku", "products_all"}, allEntries = true)
+    @CacheEvict(value = { "productBySku", "products_all" }, allEntries = true)
     public ProductDTO updateProductQuantity(Long id, InventoryUpdateDTO inventoryUpdateDTO) {
         var product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found: " + id));
@@ -169,7 +205,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {"productBySku", "products_all"}, allEntries = true)
+    @CacheEvict(value = { "productBySku", "products_all" }, allEntries = true)
     public ProductDTO subtractProductQuantity(Long id, InventorySubtractDTO inventorySubtractDTO) {
         var product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found: " + id));
@@ -228,11 +264,11 @@ public class ProductServiceImpl implements ProductService {
                 .and(inStock != null && inStock ? hasStock() : null);
     }
 
-     private Specification<com.shopping.microservices.product_service.entity.Product> isPublished() {
+    private Specification<com.shopping.microservices.product_service.entity.Product> isPublished() {
         return (root, query, cb) -> cb.isTrue(root.get("isPublished"));
     }
 
-     private Specification<com.shopping.microservices.product_service.entity.Product> inCategories(
+    private Specification<com.shopping.microservices.product_service.entity.Product> inCategories(
             List<Long> categoryIds) {
         return (root, query, cb) -> {
             // Use a subquery to find products that belong to the specified categories
@@ -247,7 +283,7 @@ public class ProductServiceImpl implements ProductService {
         };
     }
 
-     private Specification<com.shopping.microservices.product_service.entity.Product> inBrands(List<Long> brandIds) {
+    private Specification<com.shopping.microservices.product_service.entity.Product> inBrands(List<Long> brandIds) {
         return (root, query, cb) -> root.get("brandId").in(brandIds);
     }
 
@@ -270,6 +306,7 @@ public class ProductServiceImpl implements ProductService {
     private Specification<com.shopping.microservices.product_service.entity.Product> hasStock() {
         return (root, query, cb) -> cb.gt(root.get("stockQuantity"), 0L);
     }
+
     @Override
     @Transactional(readOnly = true)
     public List<FeaturedProductDTO> findFeaturedProducts(int limit) {
@@ -476,5 +513,46 @@ public class ProductServiceImpl implements ProductService {
         log.info("Published product detail found: {}", product.getId());
 
         return productMapper.toDetailDTO(product);
+    }
+
+    /**
+     * Save product attribute values
+     */
+    @Transactional
+    public void saveProductAttributeValues(Long productId, List<ProductAttributeValueCreationDTO> attributes) {
+        if (attributes == null || attributes.isEmpty()) {
+            return;
+        }
+
+        for (ProductAttributeValueCreationDTO attrDTO : attributes) {
+            var product = productRepository.findById(productId)
+                    .orElseThrow(() -> new ProductNotFoundException("Product not found: " + productId));
+
+            var attribute = new com.shopping.microservices.product_service.entity.ProductAttributeValue();
+            attribute.setProduct(product);
+
+            var productAttr = new com.shopping.microservices.product_service.entity.ProductAttribute();
+            productAttr.setId(attrDTO.attributeId());
+            attribute.setProductAttribute(productAttr);
+            attribute.setValue(attrDTO.value());
+
+            productAttributeValueRepository.save(attribute);
+        }
+
+        log.info("Product attribute values saved for product {}", productId);
+    }
+
+    /**
+     * Update product attribute values
+     */
+    @Transactional
+    public void updateProductAttributeValues(Long productId, List<ProductAttributeValueCreationDTO> attributes) {
+        // Delete existing attribute values
+        productAttributeValueRepository.deleteByProductId(productId);
+
+        // Save new attribute values
+        saveProductAttributeValues(productId, attributes);
+
+        log.info("Product attribute values updated for product {}", productId);
     }
 }
