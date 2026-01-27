@@ -21,7 +21,8 @@ public class ProductImageMapper {
 
         return ProductImage.builder()
                 .product(product)
-                .imageId(0L) // Placeholder - should be set from media service
+                .imageUrl(dto.imageUrl())
+                .altText(dto.altText())
                 .displayOrder(dto.displayOrder() != null ? dto.displayOrder() : 0)
                 .isPrimary(dto.isPrimary())
                 .build();
@@ -36,12 +37,13 @@ public class ProductImageMapper {
         return new ProductImageDTO(
                 image.getId(),
                 image.getProduct() != null ? image.getProduct().getId() : null,
-                null, // imageUrl - should be fetched from media service using imageId
-                null, // altText
+                image.getImageUrl(),
+                image.getCloudinaryPublicId(),
+                image.getAltText(),
                 Boolean.TRUE.equals(image.getIsPrimary()),
                 image.getDisplayOrder(),
-                null, // createdAt
-                null  // updatedAt
+                image.getCreatedAt(),
+                image.getUpdatedAt()
         );
     }
 

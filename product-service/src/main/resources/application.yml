@@ -111,9 +111,16 @@ app:
   warming:
     enabled: true
     top-products-limit: 100
+  image:
+    max-size: 5242880 # 5MB in bytes
 identity:
   jwt:
     secret-key: ${JWT_SECRET_KEY:cb3f30b0ec715f1bcbead50dc9d77786c038b569f2f6adb9a9e724e07ffd6c17}
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:dp4juv71c}
+  api-key: ${CLOUDINARY_API_KEY:663884345369589}
+  api-secret: ${CLOUDINARY_API_SECRET:rNqLqtyKHURj4QI3F2T64szAm5w}
 
 eureka:
   client:
