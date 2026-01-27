@@ -14,8 +14,8 @@ spring:
           uri: lb://PRODUCT-SERVICE
           predicates:
             - Path=/api/v1/products/**,/api/v1/categories/**,/api/v1/brands/**,/api/v1/public/brands/**,/api/v1/public/categories/**
-          filters:
-            - AuthenticationFilter
+#          filters:
+#            - AuthenticationFilter
 
         - id: order-service
           uri: lb://ORDER-SERVICE
@@ -60,10 +60,21 @@ spring:
           uri: lb://CUSTOMER-SERVICE
           predicates:
             - Path=/api/v1/customers/**
+
         - id: product-service-public
           uri: lb://PRODUCT-SERVICE
           predicates:
             - Path=/api/v1/public/products/**
+
+        - id: location-service-public
+          uri: lb://location-service
+          predicates:
+            - Path=/api/v1/public/addresses/**
+
+        - id: location-service-admin
+          uri: lb://location-service
+          predicates:
+            - Path=/api/v1/countries/**,/api/v1/states/**,/api/v1/districts/**
 
 # Actuator Configuration (for Prometheus)
 management:
