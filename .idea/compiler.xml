@@ -31,7 +31,7 @@
         </processorPath>
         <module name="identity-service" />
       </profile>
-      <profile name="Annotation profile for cart-service" enabled="true">
+      <profile name="Annotation profile for location-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -39,8 +39,8 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
         </processorPath>
         <module name="customer-service" />
-        <module name="cart-service" />
         <module name="location-service" />
+        <module name="cart-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

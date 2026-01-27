@@ -25,7 +25,6 @@ public class AdminCountryController {
     public ResponseEntity<ApiResponse<Object>> getCountriesPaging(
             @RequestParam(defaultValue = "0") int pageNo,
             @RequestParam(defaultValue = "10") int pageSize) {
-
         Pageable pageable = PageRequest.of(pageNo, pageSize);
         // TODO: Implement pagination logic
         return ResponseEntity.ok(ApiResponse.success("Countries retrieved successfully", null, "/api/v1/countries/paging"));
@@ -39,27 +38,27 @@ public class AdminCountryController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CountryDTO>> getCountryById(@PathVariable Long id) {
-        // TODO: Implement get country by id
-        return ResponseEntity.ok(ApiResponse.success("Country retrieved successfully", null, "/api/v1/countries/" + id));
+        CountryDTO country = countryService.getCountryById(id);
+        return ResponseEntity.ok(ApiResponse.success("Country retrieved successfully", country, "/api/v1/countries/" + id));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<CountryDTO>> createCountry(@Valid @RequestBody CountryPostDTO countryPostDTO) {
-        // TODO: Implement create country
-        return ResponseEntity.ok(ApiResponse.success("Country created successfully", null, "/api/v1/countries"));
+        CountryDTO country = countryService.createCountry(countryPostDTO);
+        return ResponseEntity.ok(ApiResponse.success("Country created successfully", country, "/api/v1/countries"));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CountryDTO>> updateCountry(
             @PathVariable Long id,
             @Valid @RequestBody CountryPostDTO countryPostDTO) {
-        // TODO: Implement update country
-        return ResponseEntity.ok(ApiResponse.success("Country updated successfully", null, "/api/v1/countries/" + id));
+        CountryDTO country = countryService.updateCountry(id, countryPostDTO);
+        return ResponseEntity.ok(ApiResponse.success("Country updated successfully", country, "/api/v1/countries/" + id));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteCountry(@PathVariable Long id) {
-        // TODO: Implement delete country
+        countryService.deleteCountry(id);
         return ResponseEntity.ok(ApiResponse.success("Country deleted successfully", null, "/api/v1/countries/" + id));
     }
 }

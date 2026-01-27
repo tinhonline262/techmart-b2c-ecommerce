@@ -2,24 +2,14 @@ package com.shopping.microservices.location_service.service;
 
 import com.shopping.microservices.location_service.dto.CountryDTO;
 import com.shopping.microservices.location_service.dto.CountryListGetDTO;
+import com.shopping.microservices.location_service.dto.CountryPostDTO;
 
 import java.util.List;
 
-/**
- * Service interface for Country operations
- */
 public interface CountryService {
-
-    /**
-     * Get all countries
-     * @return list of countries
-     */
     List<CountryListGetDTO> getAllCountries();
-
-    /**
-     * Get country by ID
-     * @param id country ID
-     * @return country DTO
-     */
     CountryDTO getCountryById(Long id);
+    CountryDTO createCountry(CountryPostDTO countryPostDTO);
+    CountryDTO updateCountry(Long id, CountryPostDTO countryPostDTO);
+    void deleteCountry(Long id);
 }
