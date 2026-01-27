@@ -51,7 +51,7 @@ SELECT
     CONCAT('Specs ', n),
     CONCAT('SKU-', LPAD(n, 6, '0')),
     CONCAT('GTIN-', LPAD(n, 8, '0')),
-    ROUND(RAND() * 1000 + 50, 2),
+    ROUND(RAND() * 10000000 + 5000000, 2),
     RAND() > 0.5,
     TRUE,
     TRUE,

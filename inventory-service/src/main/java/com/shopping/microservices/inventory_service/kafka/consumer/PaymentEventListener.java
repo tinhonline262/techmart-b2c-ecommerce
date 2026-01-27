@@ -7,7 +7,6 @@ import com.shopping.microservices.common_library.event.PaymentEvent;
 import com.shopping.microservices.inventory_service.service.ReservationService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;

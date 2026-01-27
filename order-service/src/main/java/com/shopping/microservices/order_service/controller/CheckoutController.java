@@ -20,13 +20,6 @@ public class CheckoutController {
 
     private final CheckoutService checkoutService;
 
-    /**
-     * Create a new checkout session with items.
-     * POST /api/v1/public/checkouts
-     *
-     * @param request the checkout creation request
-     * @return created checkout response
-     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ApiResponse<CheckoutResponse>> createCheckout(
@@ -40,13 +33,6 @@ public class CheckoutController {
                 ));
     }
 
-    /**
-     * Update checkout status and progress.
-     * PUT /api/v1/public/checkouts/status
-     *
-     * @param request the status update request
-     * @return the associated order ID
-     */
     @PutMapping("/status")
     public ResponseEntity<ApiResponse<Long>> updateCheckoutStatus(
             @Valid @RequestBody UpdateCheckoutStatusRequest request) {
@@ -58,13 +44,6 @@ public class CheckoutController {
         ));
     }
 
-    /**
-     * Get checkout by ID with all items.
-     * GET /api/v1/public/checkouts/{id}
-     *
-     * @param id the checkout ID
-     * @return checkout response with items
-     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CheckoutResponse>> getCheckoutById(
             @PathVariable("id") String id) {
@@ -76,14 +55,6 @@ public class CheckoutController {
         ));
     }
 
-    /**
-     * Update the payment method for a checkout.
-     * PUT /api/v1/public/checkouts/{id}/payment-method
-     *
-     * @param id      the checkout ID
-     * @param request the payment method update request
-     * @return success message
-     */
     @PutMapping("/{id}/payment-method")
     public ResponseEntity<ApiResponse<Void>> updatePaymentMethod(
             @PathVariable("id") String id,

@@ -29,11 +29,10 @@ public interface PaymentService {
     /**
      * Initiate payment with the payment provider
      * 
-     * @param paymentId The payment identifier
-     * @param request The initiation request containing return URLs and customer info
+     * @param orderId The payment identifier
      * @return InitiatedPayment with redirect URL or error
      */
-    InitiatedPayment initiatePayment(Long paymentId, InitiatePaymentRequest request);
+    InitiatedPayment initiatePayment(Long orderId);
 
     /**
      * Handle callback from payment provider

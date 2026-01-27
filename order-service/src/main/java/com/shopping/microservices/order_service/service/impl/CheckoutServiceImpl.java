@@ -3,14 +3,16 @@ package com.shopping.microservices.order_service.service.impl;
 import com.shopping.microservices.common_library.exception.BadRequestException;
 import com.shopping.microservices.common_library.exception.ForbiddenException;
 import com.shopping.microservices.common_library.exception.ResourceNotFoundException;
-import com.shopping.microservices.order_service.dto.ApiResponse;
 import com.shopping.microservices.order_service.dto.checkout.*;
 import com.shopping.microservices.order_service.dto.product.ProductDTO;
+import com.shopping.microservices.order_service.dto.product.ProductSummaryDTO;
 import com.shopping.microservices.order_service.entity.Checkout;
 import com.shopping.microservices.order_service.entity.CheckoutItem;
 import com.shopping.microservices.order_service.mapper.CheckoutMapper;
 import com.shopping.microservices.order_service.model.enumeration.CheckoutState;
+import com.shopping.microservices.order_service.repository.CheckoutItemRepository;
 import com.shopping.microservices.order_service.repository.CheckoutRepository;
+import com.shopping.microservices.order_service.repository.OrderRepository;
 import com.shopping.microservices.order_service.service.CheckoutService;
 import com.shopping.microservices.order_service.service.OrderService;
 import com.shopping.microservices.order_service.service.ProductService;
@@ -35,9 +37,10 @@ import java.util.stream.Collectors;
 public class CheckoutServiceImpl implements CheckoutService {
 
     private final CheckoutRepository checkoutRepository;
+    private final CheckoutItemRepository checkoutItemRepository;
     private final CheckoutMapper checkoutMapper;
     private final ProductService productService;
-    private final OrderService orderService;
+    private final OrderRepository orderRepository;
 
     /**
      * Creates a new {@link Checkout} object in a PENDING state.
@@ -48,12 +51,16 @@ public class CheckoutServiceImpl implements CheckoutService {
     @Override
     @Transactional
     public CheckoutResponse createCheckout(CreateCheckoutRequest checkoutPostVm) {
+        var userId = AuthenticationUtils.extractUserId();
+        log.info("Creating checkout for user ID: {}", userId);
         Checkout checkout = checkoutMapper.toEntity(checkoutPostVm);
         checkout.setStatus(CheckoutState.PENDING.name());
-        checkout.setCustomerId(AuthenticationUtils.extractUserId());
+        checkout.setCustomerId(userId);
 
-        prepareCheckoutItems(checkout, checkoutPostVm);
+        var checkoutItems = prepareCheckoutItems(checkout, checkoutPostVm);
         checkout = checkoutRepository.save(checkout);
+        checkoutItemRepository.saveAll(checkoutItems);
+
 
         CheckoutResponse checkoutVm = checkoutMapper.toDTO(checkout);
         log.info(Constants.MessageCode.CREATE_CHECKOUT, checkout.getId(), checkout.getCustomerId());
@@ -64,15 +71,15 @@ public class CheckoutServiceImpl implements CheckoutService {
     /**
      * Prepares checkout items by fetching product information and enriching items with product details.
      */
-    private void prepareCheckoutItems(Checkout checkout, CreateCheckoutRequest checkoutPostVm) {
+    private List<CheckoutItem> prepareCheckoutItems(Checkout checkout, CreateCheckoutRequest checkoutPostVm) {
         if (CollectionUtils.isEmpty(checkoutPostVm.items())) {
             throw new BadRequestException("Checkout must contain at least one item");
         }
 
-        Set<Long> productIds = checkoutPostVm.items()
+        List<Long> productIds = checkoutPostVm.items()
                 .stream()
                 .map(CheckoutItemRequest::productId)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
 
         List<CheckoutItem> checkoutItems = checkoutPostVm.items()
                 .stream()
@@ -82,7 +89,11 @@ public class CheckoutServiceImpl implements CheckoutService {
                     return item;
                 }).toList();
 
-        Map<Long, ProductDTO> products = productService.getProductInformation(productIds, 0, productIds.size());
+        Map<Long, ProductDTO> products = productService.getProductInformation(productIds)
+                .getData().content()
+                .stream()
+                .map(this::toProductDTO)
+                .collect(Collectors.toMap(ProductDTO::id, p -> p));
 
         List<CheckoutItem> enrichedItems = enrichCheckoutItemsWithProductDetails(products, checkoutItems);
         BigDecimal totalAmount = enrichedItems.stream()
@@ -93,8 +104,27 @@ public class CheckoutServiceImpl implements CheckoutService {
         checkout.calculateTotals();
         checkout.setTotalAmount(totalAmount);
 
+        return checkoutItems;
+
     }
 
+    private ProductDTO toProductDTO(ProductSummaryDTO s) {
+        if (s == null) return null;
+
+        return new ProductDTO(
+                s.id(),
+                s.name(),
+                null,                  // description
+                s.sku(),
+                s.price(),
+                s.stockQuantity(),     // quantityInStock
+                null,                  // category
+                s.brandName(),
+                null,                  // productImages
+                null,                  // createdAt
+                null                   // updatedAt
+        );
+    }
     /**
      * Enriches checkout items with product details fetched from the product service.
      */
@@ -106,6 +136,11 @@ public class CheckoutServiceImpl implements CheckoutService {
             if (product == null) {
                 throw new ResourceNotFoundException(
                     String.format("Product not found with ID: %d", item.getProductId())
+                );
+            }
+            if (product.quantityInStock() < item.getQuantity()) {
+                throw new BadRequestException(
+                    String.format("Insufficient stock for product ID: %d", item.getProductId())
                 );
             }
             item.setName(product.name());
@@ -175,7 +210,9 @@ public class CheckoutServiceImpl implements CheckoutService {
         );
         
         // Find associated order
-        return orderService.findOrderByCheckoutId(checkoutStatusPutVm.checkoutId()).orderId();
+        return orderRepository.findByCheckoutId(checkout.getId())
+                .map(order -> order.getId())
+                .orElse(null);
     }
 
     /**

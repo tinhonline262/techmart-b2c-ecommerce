@@ -1,9 +1,6 @@
 package com.shopping.microservices.payment_service.gateway.impl;
 
-import com.shopping.microservices.payment_service.dto.CapturedPayment;
-import com.shopping.microservices.payment_service.dto.InitiatePaymentRequest;
-import com.shopping.microservices.payment_service.dto.InitiatedPayment;
-import com.shopping.microservices.payment_service.dto.RefundResponse;
+import com.shopping.microservices.payment_service.dto.*;
 import com.shopping.microservices.payment_service.entity.Payment;
 import com.shopping.microservices.payment_service.enums.PaymentMethod;
 import com.shopping.microservices.payment_service.enums.PaymentStatus;
@@ -41,16 +38,6 @@ public class CODGateway implements PaymentGateway {
     @Value("${payment.cod.enabled:true}")
     private boolean enabled;
 
-    // List of restricted provinces (for demo purposes)
-    private static final Set<String> RESTRICTED_PROVINCES = Set.of(
-        "HA_GIANG", "CAO_BANG", "LAO_CAI", "BAC_KAN", "LANG_SON", "DIEN_BIEN"
-    );
-
-    // List of restricted product categories
-    private static final Set<String> RESTRICTED_CATEGORIES = Set.of(
-        "ELECTRONICS_EXPENSIVE", "JEWELRY", "LUXURY_GOODS"
-    );
-
     @Override
     public String getProviderId() {
         return "COD";
@@ -67,13 +54,13 @@ public class CODGateway implements PaymentGateway {
     }
 
     @Override
-    public InitiatedPayment initiatePayment(Payment payment, InitiatePaymentRequest request) {
+    public InitiatedPayment initiatePayment(Payment payment) {
         log.info("Initiating COD payment for payment ID: {}, amount: {}", 
             payment.getId(), payment.getTotalAmount());
 
         try {
             // Validate COD eligibility
-            ValidationResult validation = validateCODEligibility(payment, request);
+            ValidationResult validation = validateCODEligibility(payment);
             if (!validation.isValid()) {
                 log.warn("COD payment not eligible for payment ID: {}, reason: {}", 
                     payment.getId(), validation.getMessage());
@@ -96,11 +83,6 @@ public class CODGateway implements PaymentGateway {
             additionalData.put("codServiceFee", serviceFee);
             additionalData.put("totalWithFee", payment.getTotalAmount().add(serviceFee));
             additionalData.put("paymentInstructions", buildPaymentInstructions(payment));
-
-            if (request.getCustomerInfo() != null) {
-                additionalData.put("deliveryPhone", request.getCustomerInfo().getPhone());
-                additionalData.put("deliveryName", request.getCustomerInfo().getFullName());
-            }
 
             log.info("COD payment initiated successfully for payment ID: {}, reference: {}", 
                 payment.getId(), codReferenceCode);
@@ -235,6 +217,7 @@ public class CODGateway implements PaymentGateway {
 
         if (payment.isPending()) {
             // Simply mark as cancelled - no external API call needed
+            payment.markAsFailed("Cancelled by user before delivery");
             return true;
         }
 
@@ -247,7 +230,7 @@ public class CODGateway implements PaymentGateway {
     /**
      * Validate if COD is available for this payment based on business rules
      */
-    public ValidationResult validateCODEligibility(Payment payment, InitiatePaymentRequest request) {
+    public ValidationResult validateCODEligibility(Payment payment) {
         // Check if COD is enabled
         if (!enabled) {
             return ValidationResult.invalid("COD_DISABLED", "Thanh toán khi nhận hàng tạm thời không khả dụng");
@@ -266,44 +249,13 @@ public class CODGateway implements PaymentGateway {
                 String.format("Số tiền tối thiểu cho COD là %s VND", minAmount.toPlainString()));
         }
 
-        // Check for restricted delivery areas (from metadata or request)
-        if (request.getMetadata() != null) {
-            String province = (String) request.getMetadata().get("deliveryProvince");
-            if (province != null && RESTRICTED_PROVINCES.contains(province.toUpperCase())) {
-                return ValidationResult.invalid("RESTRICTED_AREA", 
-                    "COD không khả dụng cho khu vực giao hàng này");
-            }
-
-            // Check for restricted product categories
-            @SuppressWarnings("unchecked")
-            List<String> categories = (List<String>) request.getMetadata().get("productCategories");
-            if (categories != null) {
-                for (String category : categories) {
-                    if (RESTRICTED_CATEGORIES.contains(category.toUpperCase())) {
-                        return ValidationResult.invalid("RESTRICTED_PRODUCT", 
-                            "Một số sản phẩm trong đơn hàng không hỗ trợ COD");
-                    }
-                }
-            }
-
-            // Check customer trust score (for fraud prevention)
-            Object trustScoreObj = request.getMetadata().get("customerTrustScore");
-            if (trustScoreObj instanceof Number) {
-                int trustScore = ((Number) trustScoreObj).intValue();
-                if (trustScore < 30) { // Low trust score threshold
-                    return ValidationResult.invalid("LOW_TRUST_SCORE", 
-                        "COD không khả dụng cho tài khoản này. Vui lòng chọn phương thức thanh toán khác");
-                }
-            }
-        }
-
         return ValidationResult.valid();
     }
 
     /**
      * Calculate COD service fee based on order details
      */
-    public BigDecimal calculateServiceFee(Payment payment, InitiatePaymentRequest request) {
+    public BigDecimal calculateServiceFee(Payment payment) {
         // Base service fee
         BigDecimal fee = serviceFee;
 
@@ -311,14 +263,6 @@ public class CODGateway implements PaymentGateway {
         BigDecimal amount = payment.getTotalAmount();
         if (amount.compareTo(new BigDecimal("5000000")) > 0) {
             fee = fee.add(new BigDecimal("20000")); // Extra 20k for orders > 5M
-        }
-
-        // Remote area surcharge
-        if (request.getMetadata() != null) {
-            Boolean isRemoteArea = (Boolean) request.getMetadata().get("isRemoteArea");
-            if (Boolean.TRUE.equals(isRemoteArea)) {
-                fee = fee.add(new BigDecimal("30000")); // Remote area surcharge
-            }
         }
 
         return fee;

@@ -1,5 +1,6 @@
 package com.shopping.microservices.order_service.mapper;
 
+import com.shopping.microservices.order_service.dto.checkout.CheckoutResponse;
 import com.shopping.microservices.order_service.dto.order.*;
 import com.shopping.microservices.order_service.entity.Order;
 import com.shopping.microservices.order_service.entity.OrderAddress;
@@ -16,26 +17,27 @@ import java.util.stream.Collectors;
 
 @Component
 public class OrderMapper {
+    // ==================== Order Entity <-> DTO ====================
 
-    public Order toEntity(CreateOrderRequest request) {
-        if (request == null) {
+    public Order toEntity(CheckoutResponse checkout) {
+        if (checkout == null) {
             return null;
         }
-        
+
         Order order = new Order();
-        order.setEmail(request.email());
-        order.setNote(request.note());
-        order.setPromotionCode(request.promotionCode());
-        order.setCustomerId(request.customerId());
-        order.setShipmentMethodId(request.shipmentMethodId());
-        order.setPaymentMethodId(request.paymentMethodId());
-        order.setAttributes(request.attributes());
+        order.setEmail(checkout.email());
+        order.setCheckoutId(checkout.id());
+        order.setNote(checkout.note());
+        order.setPromotionCode(checkout.promotionCode());
+        order.setCustomerId(checkout.customerId());
+        order.setShipmentMethodId(checkout.shipmentMethodId());
+        order.setPaymentMethodId(checkout.paymentMethodId());
         order.setStatus(OrderStatus.PENDING);
-        order.setProgress(OrderProgress.CREATED);
         order.setPaymentStatus(PaymentStatus.PENDING);
         order.setShipmentStatus(ShipmentStatus.PENDING);
-        order.setNumberItem(request.items() != null ? request.items().size() : 0);
-        
+        order.setProgress(OrderProgress.CREATED);
+        order.setNumberItem(checkout.items() != null ? checkout.items().size() : 0);
+
         return order;
     }
 
@@ -162,17 +164,8 @@ public class OrderMapper {
         
         OrderItem item = new OrderItem();
         item.setProductId(request.productId());
-        item.setName(request.name());
-        item.setDescription(request.description());
         item.setQuantity(request.quantity());
-        item.setPrice(request.price());
-        item.setTaxAmount(request.taxAmount());
-        item.setTaxPercent(request.taxPercent());
-        item.setShipmentFee(request.shipmentFee());
-        item.setShipmentTax(request.shipmentTax());
-        item.setDiscountAmount(request.discountAmount());
         item.setStatus("PENDING");
-        
         return item;
     }
 

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shopping.microservices.common_library.constants.KafkaConsumerGroups;
 import com.shopping.microservices.common_library.constants.KafkaTopics;
 import com.shopping.microservices.common_library.event.OrderEvent;
-import com.shopping.microservices.payment_service.dto.InitiatePaymentRequest;
 import com.shopping.microservices.payment_service.enums.PaymentMethod;
 import com.shopping.microservices.payment_service.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -14,11 +13,9 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.Map;
 
 /**
  * Kafka listener for order events.
- * 
  * Handles ORDER_CREATED events to create payment records
  * and ORDER_CANCELLED events to cancel pending payments.
  */
@@ -65,8 +62,9 @@ public class OrderEventListener {
             // Extract payment details from order event
             BigDecimal totalAmount = event.getTotalAmount();
             Long orderId = event.getOrderId();
-            String checkoutId = event.getCorrelationId(); // Use correlation ID as checkout ID
-            
+            String checkoutId = extractCheckoutId(event);
+
+
             // Determine payment method from event metadata
             PaymentMethod paymentMethod = extractPaymentMethod(event);
             
@@ -89,16 +87,7 @@ public class OrderEventListener {
             // For online payment methods, we need the order service to call initiatePayment
             // with return URLs. For COD, payment is ready.
             if (paymentMethod == PaymentMethod.COD) {
-                // Auto-initiate COD payment
-                InitiatePaymentRequest request = InitiatePaymentRequest.builder()
-                    .orderId(orderId)
-                    .checkoutId(checkoutId)
-                    .amount(totalAmount)
-                    .paymentMethod(paymentMethod)
-                    .customerInfo(extractCustomerInfo(event))
-                    .build();
-                
-                paymentService.initiatePayment(paymentDTO.getId(), request);
+                paymentService.initiatePayment(paymentDTO.getId());
                 log.info("Auto-initiated COD payment for order: {}", orderId);
             }
 
@@ -148,10 +137,14 @@ public class OrderEventListener {
         return PaymentMethod.COD;
     }
 
-    private InitiatePaymentRequest.CustomerInfo extractCustomerInfo(OrderEvent event) {
-        return InitiatePaymentRequest.CustomerInfo.builder()
-            .customerId(event.getCustomerId() != null ? event.getCustomerId().toString() : null)
-            .email(event.getEmail())
-            .build();
+    private String extractCheckoutId(OrderEvent event) {
+        if (event.getMetadata() != null) {
+            Object checkoutIdObj = event.getMetadata().get("checkoutId");
+            if (checkoutIdObj != null) {
+                // Use correlationId if available, else use checkoutId from metadata
+                return event.getCorrelationId() != null ? event.getCorrelationId() : checkoutIdObj.toString();
+            }
+        }
+        return null;
     }
 }

@@ -1,9 +1,6 @@
 package com.shopping.microservices.payment_service.gateway.impl;
 
-import com.shopping.microservices.payment_service.dto.CapturedPayment;
-import com.shopping.microservices.payment_service.dto.InitiatePaymentRequest;
-import com.shopping.microservices.payment_service.dto.InitiatedPayment;
-import com.shopping.microservices.payment_service.dto.RefundResponse;
+import com.shopping.microservices.payment_service.dto.*;
 import com.shopping.microservices.payment_service.entity.Payment;
 import com.shopping.microservices.payment_service.enums.PaymentMethod;
 import com.shopping.microservices.payment_service.enums.PaymentStatus;
@@ -66,7 +63,7 @@ public class VNPayGateway implements PaymentGateway {
     }
     
     @Override
-    public InitiatedPayment initiatePayment(Payment payment, InitiatePaymentRequest request) {
+    public InitiatedPayment initiatePayment(Payment payment) {
         log.info("Initiating VNPay payment for payment ID: {}", payment.getId());
         
         try {
@@ -81,9 +78,9 @@ public class VNPayGateway implements PaymentGateway {
             vnpParams.put("vnp_TxnRef", payment.getId().toString());
             vnpParams.put("vnp_OrderInfo", "Payment for order: " + (payment.getOrderId() != null ? payment.getOrderId() : payment.getCheckoutId()));
             vnpParams.put("vnp_OrderType", "other");
-            vnpParams.put("vnp_Locale", request.getLocale() != null ? request.getLocale() : "vn");
+            vnpParams.put("vnp_Locale", "vn");
             vnpParams.put("vnp_ReturnUrl", returnUrl);
-            vnpParams.put("vnp_IpAddr", request.getCustomerInfo() != null ? request.getCustomerInfo().getIpAddress() : "127.0.0.1");
+            vnpParams.put("vnp_IpAddr", "127.0.0.1");
             vnpParams.put("vnp_CreateDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
             
             // Add bank code if payment method is specific

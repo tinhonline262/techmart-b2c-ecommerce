@@ -39,12 +39,13 @@ public interface OrderService {
 
     // ==================== SAGA Orchestration Methods ====================
 
-    void updateOrderProgress(Long orderId, OrderProgress progress, String error);
+    void updateOrderProgress(Long orderId, OrderProgress progress, String error, String correlationId);
 
-    void confirmOrder(Long orderId);
+    void confirmOrder(Long orderId, String correlationId);
 
     void completeOrder(Long orderId, String message);
 
+    void cancelOrder(Long orderId, String reason, String correlationId);
     void cancelOrder(Long orderId, String reason);
 
     OrderResponse findOrderByCheckoutId(String checkoutId);

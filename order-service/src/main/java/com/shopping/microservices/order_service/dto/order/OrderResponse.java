@@ -12,7 +12,6 @@ import java.util.Map;
 @Builder
 public record OrderResponse(
         Long orderId,
-        Long id,
         String email,
         String note,
         String promotionCode,

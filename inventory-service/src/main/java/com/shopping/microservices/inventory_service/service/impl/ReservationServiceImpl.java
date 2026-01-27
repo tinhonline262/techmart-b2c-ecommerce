@@ -68,12 +68,19 @@ public class ReservationServiceImpl implements ReservationService {
                 .toList();
 
         Map<String, Inventory> inventoryMap = inventoryService.findAndLockBySkus(skus);
+
         List<ReservationContext.ReservationResult> results = new ArrayList<>();
 
         for (OrderEvent.OrderItemData item : orderEvent.getItems()) {
             Inventory inventory = inventoryMap.get(item.getSku());
 
             if (inventory == null) {
+                publishInsufficientEvent(orderEvent, new InsufficientInventoryException(
+                        item.getSku(),
+                        item.getProductId(),
+                        item.getQuantity(),
+                        0L
+                ));
                 throw new ProductNotFoundException("Product not found: " + item.getSku());
             }
 
@@ -142,8 +149,10 @@ public class ReservationServiceImpl implements ReservationService {
                     -reservation.getReservedQuantity(),
                     "Order confirmed: " + paymentEvent.getOrderNumber()
             );
+            InventoryEvent.ReservationData reservationData = buildReservationData(reservation);
+            reservationData.setQuantityAfterAdjustment(inventory.getQuantity().intValue());
 
-            confirmedItems.add(buildReservationData(reservation));
+            confirmedItems.add(reservationData);
 
             log.info("Confirmed reservation for order: {}, product: {}",
                     paymentEvent.getOrderId(), reservation.getProductId());
@@ -156,6 +165,7 @@ public class ReservationServiceImpl implements ReservationService {
                 paymentEvent.getOrderNumber(),
                 confirmedItems
         );
+        event.setCorrelationId(paymentEvent.getCorrelationId());
         eventPublisher.publish(KafkaTopics.INVENTORY_EVENTS, event);
     }
 

@@ -87,7 +87,6 @@ public class CheckoutMapper {
         
         CheckoutItem item = new CheckoutItem();
         item.setProductId(request.productId());
-        item.setDescription(request.description());
         item.setQuantity(request.quantity());
         // name, price, tax, shipmentFee, shipmentTax, discountAmount 
         // will be set from product service data during checkout creation

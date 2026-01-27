@@ -151,6 +151,7 @@ public class ProductMapper {
                 product.getSlug(),
                 product.getSku(),
                 product.getPrice(),
+                product.getShortDescription(),
                 null, // oldPrice
                 null, // specialPrice
                 null, // thumbnailUrl

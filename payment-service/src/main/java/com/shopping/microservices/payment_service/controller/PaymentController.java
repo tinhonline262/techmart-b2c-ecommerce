@@ -55,20 +55,13 @@ public class PaymentController {
     /**
      * Initiate payment with provider
      */
-    @PostMapping("/{paymentId}/initiate")
+    @GetMapping("/{orderId}/initiate")
     public ResponseEntity<ApiResponse<InitiatedPayment>> initiatePayment(
-            @PathVariable Long paymentId,
-            @Valid @RequestBody InitiatePaymentRequest request,
-            HttpServletRequest httpRequest) {
+            @PathVariable Long orderId) {
         
-        log.info("Initiating payment: {}", paymentId);
+        log.info("Initiating payment with orderId: {}", orderId);
 
-        // Set IP address from request if not provided
-        if (request.getCustomerInfo() != null && request.getCustomerInfo().getIpAddress() == null) {
-            request.getCustomerInfo().setIpAddress(getClientIpAddress(httpRequest));
-        }
-
-        InitiatedPayment result = paymentService.initiatePayment(paymentId, request);
+        InitiatedPayment result = paymentService.initiatePayment(orderId);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
@@ -251,23 +244,5 @@ public class PaymentController {
             params.put(paramName, request.getParameter(paramName));
         }
         return params;
-    }
-
-    private String getClientIpAddress(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        // If multiple IPs (forwarded), take the first one
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
-        }
-        return ip;
     }
 }

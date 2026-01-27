@@ -4,6 +4,7 @@ import com.shopping.microservices.order_service.dto.ApiResponse;
 import com.shopping.microservices.order_service.dto.order.*;
 import com.shopping.microservices.order_service.enumeration.OrderStatus;
 import com.shopping.microservices.order_service.service.OrderService;
+import com.shopping.microservices.order_service.utils.AuthenticationUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +33,6 @@ public class OrderController {
 
     @PostMapping("/api/v1/public/orders")
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@Valid @RequestBody CreateOrderRequest request) {
-        log.info("Creating order for customer: {}", request.customerId());
         OrderResponse response = orderService.createOrder(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(HttpStatus.CREATED.value(), "Order created successfully", response));
@@ -49,16 +49,16 @@ public class OrderController {
     @GetMapping("/api/v1/public/orders/completed")
     public ResponseEntity<ApiResponse<Boolean>> checkOrderExistsByProductIdAndUserIdWithStatus(
             @RequestParam("productId") Long productId,
-            @RequestParam("userId") String userId,
             @RequestParam(value = "status", defaultValue = "COMPLETED") OrderStatus status) {
+        String userId = AuthenticationUtils.extractUserId();
         boolean exists = orderService.checkOrderExistsByProductIdAndUserIdWithStatus(productId, userId, status);
         return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK.value(), "Check completed", exists));
     }
 
     @GetMapping("/api/v1/public/orders/my-orders")
     public ResponseEntity<ApiResponse<Page<OrderSummaryResponse>>> getMyOrders(
-            @RequestParam("customerId") String customerId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        String customerId = AuthenticationUtils.extractUserId();
         log.info("Getting orders for customer: {}", customerId);
         Page<OrderSummaryResponse> orders = orderService.getMyOrders(customerId, pageable);
         return ResponseEntity.ok(ApiResponse.success(HttpStatus.OK.value(), "Orders retrieved", orders));

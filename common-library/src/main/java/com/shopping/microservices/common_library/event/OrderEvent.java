@@ -129,7 +129,7 @@ public class OrderEvent extends BaseEvent {
     /**
      * Static factory method for creating ORDER_CREATED events
      */
-    public static OrderEvent orderCreated(String source, Long orderId, String customerId, 
+    public static OrderEvent orderCreated(String source, Long orderId, String customerId,
                                           String email, BigDecimal totalAmount, 
                                           List<OrderItemData> items, Map<String, Object> metadata) {
         OrderEvent event = new OrderEvent(OrderEventType.ORDER_CREATED, source);

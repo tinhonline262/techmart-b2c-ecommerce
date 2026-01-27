@@ -4,7 +4,10 @@ import com.shopping.microservices.common_library.constants.KafkaTopics;
 import com.shopping.microservices.common_library.event.OrderEvent;
 import com.shopping.microservices.common_library.exception.ResourceNotFoundException;
 import com.shopping.microservices.common_library.kafka.EventPublisher;
+import com.shopping.microservices.common_library.utils.IdempotencyUtil;
 import com.shopping.microservices.order_service.dto.order.*;
+import com.shopping.microservices.order_service.dto.product.ProductDTO;
+import com.shopping.microservices.order_service.dto.product.ProductSummaryDTO;
 import com.shopping.microservices.order_service.entity.Order;
 import com.shopping.microservices.order_service.entity.OrderAddress;
 import com.shopping.microservices.order_service.entity.OrderItem;
@@ -13,8 +16,12 @@ import com.shopping.microservices.order_service.enumeration.OrderStatus;
 import com.shopping.microservices.order_service.enumeration.PaymentStatus;
 import com.shopping.microservices.order_service.enumeration.ShipmentStatus;
 import com.shopping.microservices.order_service.mapper.OrderMapper;
+import com.shopping.microservices.order_service.repository.CheckoutRepository;
+import com.shopping.microservices.order_service.repository.OrderAddressRepository;
+import com.shopping.microservices.order_service.repository.OrderItemRepository;
 import com.shopping.microservices.order_service.repository.OrderRepository;
 import com.shopping.microservices.order_service.service.OrderService;
+import com.shopping.microservices.order_service.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,36 +44,81 @@ import java.util.stream.Collectors;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final OrderAddressRepository orderAddressRepository;
     private final OrderMapper orderMapper;
     private final EventPublisher eventPublisher;
+    private final CheckoutServiceImpl checkoutService;
+    private final ProductService productService;
 
     private static final String SERVICE_NAME = "order-service";
 
     @Override
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
-        log.info("Creating order for customer: {}, checkoutId: {}", request.customerId(), request.checkoutId());
 
-        Order order = orderMapper.toEntity(request);
-        order.setCheckoutId(request.checkoutId());
-        order.setStatus(OrderStatus.PENDING);
-        order.setPaymentStatus(PaymentStatus.PENDING);
-        order.setShipmentStatus(ShipmentStatus.PENDING);
-        order.setProgress(OrderProgress.CREATED);
+        if (!checkoutService.existsById(request.checkoutId())) {
+            throw new ResourceNotFoundException("Checkout", "id", request.checkoutId());
+        }
+        log.info("Creating order for checkoutId: {}", request.checkoutId());
+        var checkoutOrder = checkoutService.getCheckoutById(request.checkoutId());
+        Order order = orderMapper.toEntity(checkoutOrder);
+        order.setAttributes(request.attributes());
+        order.setNote(request.note());
+        order.setPromotionCode(request.promotionCode());
+        // email from request has higher priority
+        if (request.email() != null && !request.email().isEmpty()) {
+            order.setEmail(request.email());
+        }
 
         if (request.shippingAddress() != null) {
             OrderAddress shippingAddress = orderMapper.toEntity(request.shippingAddress());
             order.setShippingAddress(shippingAddress);
+            orderAddressRepository.save(shippingAddress);
         }
 
         BigDecimal totalAmount = BigDecimal.ZERO;
-        if (request.items() != null) {
-            for (OrderItemRequest itemRequest : request.items()) {
+        // order items from request have higher priority
+        if (request.items() != null && !request.items().isEmpty()) {
+            order.getItems().clear();
+
+            List<ProductSummaryDTO> newProductsRequest =  productService.getProductInformation(request.items()
+            .stream()
+                    .map(OrderItemRequest::productId)
+                    .collect(Collectors.toList())
+            ).getData().content();
+
+
+            for (ProductSummaryDTO productSummaryDTO : newProductsRequest) {
+                OrderItemRequest itemRequest = request.items().stream()
+                        .filter(item -> item.productId().equals(productSummaryDTO.id()))
+                        .findFirst()
+                        .orElseThrow(() -> new ResourceNotFoundException("OrderItemRequest", "productId", productSummaryDTO.id().toString()));
+                if (itemRequest.quantity() > productSummaryDTO.stockQuantity()) {
+                    throw new IllegalArgumentException("Insufficient stock for product ID: " + productSummaryDTO.id());
+                }
                 OrderItem item = orderMapper.toEntity(itemRequest);
-                item.setSku("SKU-" + itemRequest.productId());
-                order.addItem(item);
-                
-                BigDecimal itemTotal = itemRequest.price().multiply(BigDecimal.valueOf(itemRequest.quantity()));
+                item.setName(productSummaryDTO.name());
+                item.setSku(productSummaryDTO.sku());
+                item.setPrice(productSummaryDTO.price());
+                item.setOrder(order);
+                item.setDescription(productSummaryDTO.description());
+                item.setDiscountAmount(BigDecimal.ZERO); // Assuming no discount for simplicity
+                item.setTaxAmount(BigDecimal.ZERO); // Assuming no tax for simplicity
+                item.setTaxPercent(BigDecimal.ZERO); // Assuming no tax percent for simplicity
+                item.setShipmentFee(BigDecimal.ZERO); // Assuming no shipment fee for simplicity
+                item.setShipmentTax(BigDecimal.ZERO); // Assuming no shipment tax for simplicity
+
+                orderItemRepository.save(item);
+
+                order.getItems().add(item);
+
+                BigDecimal itemTotal = item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+                totalAmount = totalAmount.add(itemTotal);
+            }
+        } else {
+            for (OrderItem item : order.getItems()) {
+                BigDecimal itemTotal = item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
                 totalAmount = totalAmount.add(itemTotal);
             }
         }
@@ -83,7 +135,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public void updateOrderProgress(Long orderId, OrderProgress progress, String error) {
+    public void updateOrderProgress(Long orderId, OrderProgress progress, String error, String correlationId) {
         log.info("Updating order {} progress to: {}", orderId, progress);
 
         Order order = findOrderById(orderId);
@@ -102,7 +154,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public void confirmOrder(Long orderId) {
+    public void confirmOrder(Long orderId, String correlationId) {
         log.info("Confirming order: {}", orderId);
 
         Order order = findOrderById(orderId);
@@ -113,7 +165,7 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.save(order);
         log.info("Order confirmed: {}", orderId);
 
-        publishOrderConfirmedEvent(order);
+        publishOrderConfirmedEvent(order, correlationId);
     }
 
     @Override
@@ -128,11 +180,25 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.save(order);
         log.info("Order completed: {}", orderId);
 
-        publishOrderConfirmedEvent(order);
+        publishOrderConfirmedEvent(order, IdempotencyUtil.generateCorrelationId());
     }
 
     @Override
     @Transactional
+    public void cancelOrder(Long orderId, String reason, String correlationId) {
+        log.info("Cancelling order: {}, reason: {}", orderId, reason);
+
+        Order order = findOrderById(orderId);
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setRejectReason(reason);
+
+        orderRepository.save(order);
+        log.info("Order cancelled: {}", orderId);
+
+        publishOrderCancelledEvent(order, reason, correlationId);
+    }
+
+    @Override
     public void cancelOrder(Long orderId, String reason) {
         log.info("Cancelling order: {}, reason: {}", orderId, reason);
 
@@ -143,7 +209,7 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.save(order);
         log.info("Order cancelled: {}", orderId);
 
-        publishOrderCancelledEvent(order, reason);
+        publishOrderCancelledEvent(order, reason, IdempotencyUtil.generateCorrelationId());
     }
 
     @Override
@@ -280,6 +346,8 @@ public class OrderServiceImpl implements OrderService {
         Map<String, Object> processingState = new HashMap<>();
         processingState.put("progress", order.getProgress().name());
         processingState.put("paymentMethod", order.getPaymentMethodId());
+        processingState.put("checkoutId", order.getCheckoutId());
+
         OrderEvent event = OrderEvent.orderCreated(
                 SERVICE_NAME,
                 order.getId(),
@@ -290,26 +358,28 @@ public class OrderServiceImpl implements OrderService {
                 processingState
         );
         event.setOrderNumber("ORD-" + order.getId());
+        event.setCorrelationId(IdempotencyUtil.generateCorrelationId());
 
         eventPublisher.publish(KafkaTopics.ORDER_EVENTS, event);
         log.info("Published ORDER_CREATED event for order: {}", order.getId());
     }
 
-    private void publishOrderConfirmedEvent(Order order) {
+    private void publishOrderConfirmedEvent(Order order, String correlationId) {
         OrderEvent event = OrderEvent.orderConfirmed(SERVICE_NAME, order.getId(), order.getCustomerId(), order.getEmail());
         event.setOrderNumber("ORD-" + order.getId());
         event.setTotalAmount(order.getTotalAmount());
+        event.setCorrelationId(correlationId);
 
         eventPublisher.publish(KafkaTopics.ORDER_EVENTS, event);
         log.info("Published ORDER_CONFIRMED event for order: {}", order.getId());
     }
 
-    private void publishOrderCancelledEvent(Order order, String reason) {
+    private void publishOrderCancelledEvent(Order order, String reason, String correlationId) {
         OrderEvent event = OrderEvent.orderCancelled(SERVICE_NAME, order.getId(), reason);
         event.setOrderNumber("ORD-" + order.getId());
         event.setCustomerId(order.getCustomerId());
         event.setEmail(order.getEmail());
-
+        event.setCorrelationId(correlationId);
         eventPublisher.publish(KafkaTopics.ORDER_EVENTS, event);
         log.info("Published ORDER_CANCELLED event for order: {}", order.getId());
     }

@@ -1,9 +1,6 @@
 package com.shopping.microservices.payment_service.gateway;
 
-import com.shopping.microservices.payment_service.dto.CapturedPayment;
-import com.shopping.microservices.payment_service.dto.InitiatePaymentRequest;
-import com.shopping.microservices.payment_service.dto.InitiatedPayment;
-import com.shopping.microservices.payment_service.dto.RefundResponse;
+import com.shopping.microservices.payment_service.dto.*;
 import com.shopping.microservices.payment_service.entity.Payment;
 import com.shopping.microservices.payment_service.enums.PaymentMethod;
 import com.shopping.microservices.payment_service.enums.PaymentStatus;
@@ -32,7 +29,7 @@ public interface PaymentGateway {
     /**
      * Initiate payment and return redirect URL or payment details
      */
-    InitiatedPayment initiatePayment(Payment payment, InitiatePaymentRequest request);
+    InitiatedPayment initiatePayment(Payment payment);
     
     /**
      * Verify payment callback/webhook

@@ -1,4 +1,4 @@
-package com.shopping.microservices.product_service.dto;
+package com.shopping.microservices.order_service.dto.product;
 
 import java.io.Serializable;
 import java.math.BigDecimal;

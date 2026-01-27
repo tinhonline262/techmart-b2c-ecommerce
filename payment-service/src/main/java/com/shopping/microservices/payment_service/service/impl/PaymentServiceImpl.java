@@ -91,16 +91,17 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-    public InitiatedPayment initiatePayment(Long paymentId, InitiatePaymentRequest request) {
-        log.info("Initiating payment: {}", paymentId);
+    public InitiatedPayment initiatePayment(Long orderId) {
+        log.info("Initiating payment with orderId: {}", orderId);
 
         // Load payment with pessimistic lock to prevent concurrent initiation
-        Payment payment = paymentRepository.findByIdWithLock(paymentId)
-            .orElseThrow(() -> new PaymentException(paymentId, "Payment not found: " + paymentId));
+        Payment payment = paymentRepository.findByOrderIdWithLock(orderId)
+            .orElseThrow(() -> new PaymentException(orderId,
+                "Payment not found for order: " + orderId));
 
         // Validate payment status
         if (!payment.isPending()) {
-            throw new PaymentException(paymentId, 
+            throw new PaymentException(payment.getId(),
                 "Payment is not in pending status: " + payment.getPaymentStatus());
         }
 
@@ -115,7 +116,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // Initiate payment with gateway
-        InitiatedPayment initiatedPayment = gateway.initiatePayment(payment, request);
+        InitiatedPayment initiatedPayment = gateway.initiatePayment(payment);
 
         if (initiatedPayment.isSuccessful()) {
             // Update payment status
@@ -130,9 +131,9 @@ public class PaymentServiceImpl implements PaymentService {
             publishPaymentInitiatedEvent(payment);
 
             log.info("Payment initiated successfully: {}, redirectUrl: {}", 
-                paymentId, initiatedPayment.getRedirectUrl());
+                payment.getId(), initiatedPayment.getRedirectUrl());
         } else {
-            log.error("Failed to initiate payment: {}", paymentId);
+            log.error("Failed to initiate payment: {}", payment.getId());
         }
 
         return initiatedPayment;
@@ -356,12 +357,7 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepository.save(payment);
 
         // Publish event
-        PaymentEvent event = new PaymentEvent(PaymentEvent.PaymentEventType.PAYMENT_FAILED, SOURCE);
-        event.setPaymentId(payment.getId());
-        event.setOrderId(payment.getOrderId());
-        event.setFailureReason("Cancelled by user");
-        eventPublisher.publish(KafkaTopics.PAYMENT_EVENTS, event);
-
+        publishPaymentFailedEvent(payment, "Cancelled by user");
         log.info("Payment cancelled: {}", paymentId);
         return true;
     }

@@ -9,6 +9,7 @@ import java.time.Instant;
 public record CheckoutItemResponse(
         Long id,
         Long productId,
+        String sku,
         String name,
         String description,
         Integer quantity,

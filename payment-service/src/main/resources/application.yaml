@@ -116,6 +116,6 @@ payment:
   # COD Configuration
   cod:
     enabled: true
-    max-amount: 10000000
-    min-amount: 10000
+    max-amount: 50000000
+    min-amount: 1000000
     service-fee: 0

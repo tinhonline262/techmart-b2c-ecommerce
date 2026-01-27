@@ -1,7 +1,6 @@
 package com.shopping.microservices.product_service.controller;
 
 import com.shopping.microservices.product_service.dto.*;
-import com.shopping.microservices.product_service.repository.*;
 import com.shopping.microservices.product_service.service.ProductService;
 import com.shopping.microservices.product_service.service.ProductAttributeService;
 import com.shopping.microservices.product_service.service.ProductAttributeGroupService;
@@ -27,19 +26,12 @@ import java.util.List;
 @Slf4j
 public class PublicProductController {
 
-    private final ProductRepository productRepository;
-    private final ProductImageRepository productImageRepository;
-    private final ProductOptionRepository productOptionRepository;
-    private final ProductOptionValueRepository productOptionValueRepository;
-    private final ProductOptionCombinationRepository productOptionCombinationRepository;
-    private final ProductRelatedRepository productRelatedRepository;
     private final ProductService productService;
     private final ProductAttributeService productAttributeService;
     private final ProductAttributeGroupService productAttributeGroupService;
 
     /**
      * Get all published products with multi-criteria filtering.
-     * 
      * GET /api/v1/public/products
      * GET
      * /api/v1/public/products?categoryIds=1,2&brandIds=1&minPrice=10&maxPrice=100

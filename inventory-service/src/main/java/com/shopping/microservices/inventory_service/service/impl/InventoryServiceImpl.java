@@ -1,5 +1,7 @@
 package com.shopping.microservices.inventory_service.service.impl;
 
+import com.shopping.microservices.common_library.event.InventoryEvent;
+import com.shopping.microservices.common_library.kafka.EventPublisher;
 import com.shopping.microservices.inventory_service.entity.Inventory;
 import com.shopping.microservices.inventory_service.exception.OutOfStockException;
 import com.shopping.microservices.inventory_service.exception.ProductNotFoundException;
@@ -23,6 +25,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     private final InventoryRepository inventoryRepository;
     private final InventoryTransactionService inventoryTransactionService;
+    private final EventPublisher eventPublisher;
 
     @Override
     public boolean isInStock(String sku, Long quantity) {

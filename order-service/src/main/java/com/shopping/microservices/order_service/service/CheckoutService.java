@@ -1,6 +1,7 @@
 package com.shopping.microservices.order_service.service;
 
 import com.shopping.microservices.order_service.dto.checkout.*;
+import com.shopping.microservices.order_service.entity.Checkout;
 
 public interface CheckoutService {
 

@@ -1,6 +1,7 @@
 package com.shopping.microservices.product_service.service;
 
 
+import com.shopping.microservices.common_library.event.InventoryEvent;
 import com.shopping.microservices.product_service.dto.*;
 import com.shopping.microservices.product_service.dto.ProductCreationDTO;
 import com.shopping.microservices.product_service.dto.ProductDTO;
@@ -20,6 +21,7 @@ public interface ProductService {
     public ProductDTO updateProduct(Long id, ProductUpdateDTO productUpdateDTO);
     public void deleteProduct(Long id);
     public ProductDTO updateProductQuantity(Long id, InventoryUpdateDTO inventoryUpdateDTO);
+    public void updateProductQuantity(InventoryEvent event);
     public ProductDTO subtractProductQuantity(Long id, InventorySubtractDTO inventorySubtractDTO);
     public ProductDTO reverseProductStockBySku(ProductReduceStockDTO productDTO);
 
@@ -86,4 +88,9 @@ public interface ProductService {
      * Get option combinations (SKU variants) for a specific product
      */
     List<ProductOptionCombinationDTO> getProductOptionCombinations(Long productId);
+
+    /**
+     * Get product summary information in bulk by IDs
+     */
+    List<ProductSummaryDTO> getProductSummariesByIds(List<Long> productIds);
 }

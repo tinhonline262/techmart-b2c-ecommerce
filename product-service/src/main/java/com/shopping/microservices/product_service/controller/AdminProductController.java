@@ -16,6 +16,8 @@ import org.springframework.data.domain.PageRequest;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -356,6 +358,21 @@ public class AdminProductController {
     public ResponseEntity<ApiResponse<ProductDTO>> getProductById(@PathVariable Long id) {
         var product = productService.findById(id);
         return ResponseEntity.ok(ApiResponse.success(product, "Product retrieved successfully"));
+    }
+
+
+    /**
+     * Get product by IDs.
+     *
+     * GET /api/v1/products
+     */
+    @GetMapping("/api/v1/products")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<ApiResponse<List<ProductSummaryDTO>>> getProductInformation(
+            @RequestParam("id") List<Long> productIds
+    ) {
+        var products = productService.getProductSummariesByIds(productIds);
+        return ResponseEntity.ok(ApiResponse.success(products, "Products retrieved successfully"));
     }
 
     /**

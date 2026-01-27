@@ -99,6 +99,9 @@ public class InventoryEvent extends BaseEvent {
          */
         private Integer quantity;
 
+
+        private Integer quantityAfterAdjustment;
+
         /**
          * Warehouse identifier
          */

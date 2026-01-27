@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shopping.microservices.common_library.constants.KafkaConsumerGroups;
 import com.shopping.microservices.common_library.constants.KafkaTopics;
 import com.shopping.microservices.common_library.event.PaymentEvent;
+import com.shopping.microservices.common_library.utils.IdempotencyUtil;
 import com.shopping.microservices.order_service.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,11 +33,11 @@ public class PaymentEventListener {
 
             switch (eventType) {
                 case PAYMENT_SUCCESS -> {
-                    orderService.confirmOrder(event.getOrderId());
+                    orderService.confirmOrder(event.getOrderId(), event.getCorrelationId());
                     log.info("Order {} confirmed after payment success", event.getOrderId());
                 }
                 case PAYMENT_FAILED -> {
-                    orderService.cancelOrder(event.getOrderId(), "Payment failed: " + event.getFailureReason());
+                    orderService.cancelOrder(event.getOrderId(), "Payment failed: " + event.getFailureReason(), event.getCorrelationId());
                     log.warn("Order {} cancelled due to payment failure: {}", event.getOrderId(), event.getFailureReason());
                 }
                 default -> log.debug("Ignoring payment event type: {}", event.getEventType());

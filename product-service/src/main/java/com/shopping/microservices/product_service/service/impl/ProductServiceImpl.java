@@ -1,5 +1,6 @@
 package com.shopping.microservices.product_service.service.impl;
 
+import com.shopping.microservices.common_library.event.InventoryEvent;
 import com.shopping.microservices.product_service.dto.*;
 import com.shopping.microservices.product_service.exception.CategoryNotFoundException;
 import com.shopping.microservices.product_service.exception.ProductNotFoundException;
@@ -149,6 +150,21 @@ public class ProductServiceImpl implements ProductService {
         product.setStockQuantity(Long.valueOf(inventoryUpdateDTO.quantity()));
         var saved = productRepository.save(product);
         return productMapper.toDTO(saved);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"productBySku", "products_all"}, allEntries = true)
+    public void updateProductQuantity(InventoryEvent event) {
+        var reservations = event.getReservations();
+        for (InventoryEvent.ReservationData reservation : reservations) {
+            var product = productRepository.findById(reservation.getProductId())
+                    .orElseThrow(() -> new ProductNotFoundException("Product not found: " + reservation.getProductId()));
+            if (reservation.getQuantityAfterAdjustment() != null) {
+                product.setStockQuantity(Long.valueOf(reservation.getQuantityAfterAdjustment()));
+            }
+            productRepository.save(product);
+        }
     }
 
     @Override
@@ -433,6 +449,18 @@ public class ProductServiceImpl implements ProductService {
         return combinations.stream()
                 .map(productOptionCombinationMapper::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProductSummaryDTO> getProductSummariesByIds(List<Long> productIds) {
+        log.info("Getting product summaries for product IDs: {}", productIds);
+        var products = productIds.stream()
+                .map(id -> productRepository.findById(id)
+                        .orElseThrow(() -> new ProductNotFoundException("Product not found with ID: " + id)))
+                .map(productMapper::toSummaryDTO)
+                .collect(Collectors.toList());
+        log.info("Found {} products for provided IDs", products.size());
+        return products;
     }
 
     @Override
