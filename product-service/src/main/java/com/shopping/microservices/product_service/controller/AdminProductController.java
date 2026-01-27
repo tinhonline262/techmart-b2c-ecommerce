@@ -19,7 +19,11 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.cloudinary.*;
+import com.cloudinary.utils.ObjectUtils;
+import io.github.cdimascio.dotenv.Dotenv;
 
+import java.util.Map;
 /**
  * Admin Product Controller
  * Handles all administrative operations for products and options.
