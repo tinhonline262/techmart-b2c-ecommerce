@@ -86,7 +86,7 @@ public class OrderServiceImpl implements OrderService {
             .stream()
                     .map(OrderItemRequest::productId)
                     .collect(Collectors.toList())
-            ).getData().content();
+            ).getData();
 
 
             for (ProductSummaryDTO productSummaryDTO : newProductsRequest) {

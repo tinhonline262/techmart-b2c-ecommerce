@@ -1,9 +1,12 @@
 package com.shopping.microservices.common_library.event;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.shopping.microservices.common_library.kafka.BaseEvent;
 import lombok.*;
 
+import java.sql.Timestamp;
 import java.util.Map;
 
 /**
@@ -120,6 +123,7 @@ public class NotificationEvent extends BaseEvent {
         event.setRecipient(recipient);
         event.setTemplate(template);
         event.setSubject(subject);
+        event.setCustomerName(data.getOrDefault("name", "").toString());
         event.setData(data);
         return event;
     }

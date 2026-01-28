@@ -1,15 +1,11 @@
 package com.shopping.microservices.notification_service.service.impl;
 
+import com.shopping.microservices.common_library.event.NotificationEvent;
 import com.shopping.microservices.common_library.event.OrderEvent;
+import com.shopping.microservices.common_library.event.PaymentEvent;
 import com.shopping.microservices.notification_service.constant.AttributeConstant;
-import com.shopping.microservices.notification_service.event.*;
 import com.shopping.microservices.notification_service.service.MailService;
-import com.shopping.microservices.notification_service.template.AbstractMailHandler;
-import com.shopping.microservices.notification_service.template.CompleteUserMailHandler;
-import com.shopping.microservices.notification_service.template.OrderCancelledMailHandler;
-import com.shopping.microservices.notification_service.template.OrderCompletedMailHandler;
-import com.shopping.microservices.notification_service.template.OrderPlacedMailHandler;
-import com.shopping.microservices.notification_service.template.VerifyUserMailHandler;
+import com.shopping.microservices.notification_service.template.*;
 import jakarta.mail.MessagingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,29 +32,29 @@ class MailServiceImpl implements MailService {
     }
 
     @Override
-    public void sendVerifyUserMail(VerifyUserMailEvent mailDTO) {
+    public void sendVerifyUserMail(NotificationEvent mailDTO) {
         Map<String, Object> variables = new HashMap<>();
-        variables.put(AttributeConstant.NAME_ATTRIBUTE, mailDTO.name());
-        variables.put(AttributeConstant.EMAIL_ATTRIBUTE, mailDTO.email());
-        variables.put(AttributeConstant.VERIFY_TOKEN_ATTRIBUTE, mailDTO.verifyToken());
-        variables.put(AttributeConstant.EXPIRED_DATE_ATTRIBUTE, mailDTO.expiredDate());
+        variables.put(AttributeConstant.NAME_ATTRIBUTE, mailDTO.getData().get("name"));
+        variables.put(AttributeConstant.EMAIL_ATTRIBUTE, mailDTO.getData().get("email"));
+        variables.put(AttributeConstant.VERIFY_TOKEN_ATTRIBUTE, mailDTO.getData().get("verifyToken"));
+        variables.put(AttributeConstant.EXPIRED_DATE_ATTRIBUTE, mailDTO.getData().get("expiredDate"));
 
         AbstractMailHandler mailHandler = new VerifyUserMailHandler(
-                mailSender, templateEngine, variables, senderMail, mailDTO.email()
+                mailSender, templateEngine, variables, senderMail, mailDTO.getData().get("email").toString()
         );
         sendMail(mailHandler);
     }
 
     @Override
-    public void sendCompleteUserMail(CompleteUserMailEvent mailDTO) {
+    public void sendCompleteUserMail(NotificationEvent mailDTO) {
         Map<String, Object> variables = new HashMap<>();
-        variables.put(AttributeConstant.NAME_ATTRIBUTE, mailDTO.name());
-        variables.put(AttributeConstant.EMAIL_ATTRIBUTE, mailDTO.email());
-        variables.put(AttributeConstant.USERNAME_ATTRIBUTE, mailDTO.username());
-        variables.put(AttributeConstant.CREATED_AT_ATTRIBUTE, mailDTO.createdAt());
+        variables.put(AttributeConstant.NAME_ATTRIBUTE, mailDTO.getData().get("name"));
+        variables.put(AttributeConstant.EMAIL_ATTRIBUTE, mailDTO.getData().get("email"));
+        variables.put(AttributeConstant.USERNAME_ATTRIBUTE, mailDTO.getData().get("username"));
+        variables.put(AttributeConstant.CREATED_AT_ATTRIBUTE, mailDTO.getData().get("createdAt"));
 
         AbstractMailHandler mailHandler = new CompleteUserMailHandler(
-                mailSender, templateEngine, variables, senderMail, mailDTO.email()
+                mailSender, templateEngine, variables, senderMail, mailDTO.getData().get("email").toString()
         );
         sendMail(mailHandler);
     }
@@ -109,6 +105,22 @@ class MailServiceImpl implements MailService {
 
         AbstractMailHandler mailHandler = new OrderCancelledMailHandler(
                 mailSender, templateEngine, variables, senderMail, event.getEmail()
+        );
+        sendMail(mailHandler);
+    }
+
+    @Override
+    public void sendPaymentSuccessMail(PaymentEvent event) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put(AttributeConstant.NAME_ATTRIBUTE, event.getMetadata()!= null ?
+                event.getMetadata().get("customerName") : "Customer");
+        variables.put(AttributeConstant.EMAIL_ATTRIBUTE, event.getCustomerEmail());
+        variables.put(AttributeConstant.ORDER_NUMBER_ATTRIBUTE, event.getOrderNumber());
+        variables.put(AttributeConstant.TOTAL_AMOUNT_ATTRIBUTE, event.getAmount());
+        variables.put(AttributeConstant.COMPLETED_AT_ATTRIBUTE, event.getTimestamp());
+
+        AbstractMailHandler mailHandler = new PaymentSuccessMailHandler(
+                mailSender, templateEngine, variables, senderMail, event.getCustomerEmail()
         );
         sendMail(mailHandler);
     }

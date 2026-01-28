@@ -35,8 +35,8 @@ public interface ProductService {
      * @param productIds Set of product IDs to fetch
      * @return Map of product ID to ProductDTO
      */
-    @GetMapping("/api/v1/products")
-    public ApiResponse<PageResponseDTO<ProductSummaryDTO>> getProductInformation(
-            @RequestParam("ids") List<Long> productIds
+    @GetMapping("/api/v1/products/bulk")
+    public ApiResponse<List<ProductSummaryDTO>> getProductInformation(
+            @RequestParam("id") List<Long> productIds
     );
 }

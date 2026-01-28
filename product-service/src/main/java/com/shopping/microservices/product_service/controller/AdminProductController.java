@@ -402,7 +402,7 @@ public class AdminProductController {
      *
      * GET /api/v1/products
      */
-    @GetMapping("/api/v1/products")
+    @GetMapping("/bulk")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<ProductSummaryDTO>>> getProductInformation(
             @RequestParam("id") List<Long> productIds
