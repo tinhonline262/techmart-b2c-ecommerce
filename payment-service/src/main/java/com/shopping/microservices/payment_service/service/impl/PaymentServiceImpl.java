@@ -550,8 +550,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private void publishPaymentNotification(Payment payment, NotificationEvent.NotificationTemplate template) {
-        // This would require customer email from somewhere (order service or request)
-        // For now, skip notification if no email available
+        //
         log.debug("Notification would be sent for payment: {}, template: {}", payment.getId(), template);
     }
 }

@@ -90,7 +90,7 @@ public class CheckoutServiceImpl implements CheckoutService {
                 }).toList();
 
         Map<Long, ProductDTO> products = productService.getProductInformation(productIds)
-                .getData().content()
+                .getData()
                 .stream()
                 .map(this::toProductDTO)
                 .collect(Collectors.toMap(ProductDTO::id, p -> p));
