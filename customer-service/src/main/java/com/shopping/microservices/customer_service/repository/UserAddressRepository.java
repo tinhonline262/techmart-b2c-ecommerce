@@ -12,22 +12,22 @@ import java.util.Optional;
  */
 @Repository
 public interface UserAddressRepository extends JpaRepository<UserAddress, Long> {
-    
+
     /**
      * Find all addresses for a specific user
      * @param userId the user identifier
      * @return list of user addresses
      */
     List<UserAddress> findByUserId(String userId);
-    
+
     /**
-     * Find the default address for a specific user
+     * Find active addresses for a specific user
      * @param userId the user identifier
-     * @param isDefault flag to filter default address
-     * @return optional user address
+     * @param isActive flag to filter active addresses
+     * @return list of user addresses
      */
-    Optional<UserAddress> findByUserIdAndIsDefault(String userId, Boolean isDefault);
-    
+    List<UserAddress> findByUserIdAndIsActive(String userId, Boolean isActive);
+
     /**
      * Find a specific user address by user and address ID
      * @param userId the user identifier
@@ -35,7 +35,7 @@ public interface UserAddressRepository extends JpaRepository<UserAddress, Long> 
      * @return optional user address
      */
     Optional<UserAddress> findByUserIdAndId(String userId, Long id);
-    
+
     /**
      * Delete a specific user address
      * @param userId the user identifier

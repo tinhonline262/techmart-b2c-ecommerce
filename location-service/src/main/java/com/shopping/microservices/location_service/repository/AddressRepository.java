@@ -10,7 +10,7 @@ import java.util.List;
 
 @Repository
 public interface AddressRepository extends JpaRepository<Address, Long> {
-    
+
     @Query("SELECT a FROM Address a WHERE a.id IN :ids")
     List<Address> findByIdIn(@Param("ids") List<Long> ids);
 }
