@@ -96,6 +96,10 @@ identity:
     secret-key: ${JWT_SECRET_KEY:cb3f30b0ec715f1bcbead50dc9d77786c038b569f2f6adb9a9e724e07ffd6c17}
 
 eureka:
+  instance:
+    prefer-ip-address: true
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}  # ✅ Thêm dòng này
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka

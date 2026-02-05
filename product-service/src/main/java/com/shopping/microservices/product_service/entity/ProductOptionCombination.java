@@ -32,6 +32,7 @@ public class ProductOptionCombination {
     private String value;
 
     @Size(max = 100)
+    @Transient
     @Column(name = "sku", length = 100)
     private String sku;
 

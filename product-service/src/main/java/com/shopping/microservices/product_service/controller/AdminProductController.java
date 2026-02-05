@@ -3,29 +3,21 @@ package com.shopping.microservices.product_service.controller;
 import com.shopping.microservices.product_service.client.InventoryServiceClient;
 import com.shopping.microservices.product_service.dto.*;
 import com.shopping.microservices.product_service.exception.ProductNotFoundException;
-import com.shopping.microservices.product_service.repository.*;
 import com.shopping.microservices.product_service.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
-import com.cloudinary.*;
-import com.cloudinary.utils.ObjectUtils;
-import io.github.cdimascio.dotenv.Dotenv;
 
-import java.util.Map;
 /**
  * Admin Product Controller
  * Handles all administrative operations for products and options.
@@ -44,6 +36,7 @@ public class AdminProductController {
     private final ProductAttributeValueService productAttributeValueService;
     private final ProductAttributeGroupService productAttributeGroupService;
     private final InventoryServiceClient inventoryServiceClient;
+    private final ProductImageService productImageService; // ✅ THÊM
 
     // ================================
     // PRODUCT CRUD OPERATIONS
@@ -51,12 +44,6 @@ public class AdminProductController {
 
     /**
      * Get all products with pagination, filtering, and sorting.
-     * Supports bulk queries by ids, categoryIds, brandIds.
-     *
-     * GET /api/v1/products
-     * GET /api/v1/products?ids=1,2,3
-     * GET /api/v1/products?categoryIds=1,2
-     * GET /api/v1/products?brandIds=1,2
      */
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
@@ -73,12 +60,11 @@ public class AdminProductController {
             Pageable pageable) {
         var allProducts = productService.findAll();
 
-        // Apply filters
         var filtered = allProducts.stream()
                 .filter(p -> ids == null || ids.isEmpty() || ids.contains(p.id()))
                 .filter(p -> categoryIds == null || categoryIds.isEmpty()
                         || (p.categories() != null
-                                && p.categories().stream().anyMatch(c -> categoryIds.contains(c.id()))))
+                        && p.categories().stream().anyMatch(c -> categoryIds.contains(c.id()))))
                 .filter(p -> brandIds == null || brandIds.isEmpty() || brandIds.contains(p.brand().id()))
                 .filter(p -> keyword == null || keyword.isEmpty()
                         || p.name().toLowerCase().contains(keyword.toLowerCase()))
@@ -90,7 +76,6 @@ public class AdminProductController {
                         || (!inStock && (p.stockQuantity() == null || p.stockQuantity() <= 0)))
                 .toList();
 
-        // Create paginated response
         int pageNumber = pageable.getPageNumber();
         int pageSize = pageable.getPageSize();
         int start = pageNumber * pageSize;
@@ -112,8 +97,6 @@ public class AdminProductController {
 
     /**
      * Get latest products.
-     *
-     * GET /api/v1/products/latest?limit=10
      */
     @GetMapping("/latest")
     @ResponseStatus(HttpStatus.OK)
@@ -131,8 +114,6 @@ public class AdminProductController {
 
     /**
      * Search products by keyword and filters.
-     *
-     * GET /api/v1/products/search
      */
     @GetMapping("/search")
     @ResponseStatus(HttpStatus.OK)
@@ -147,7 +128,6 @@ public class AdminProductController {
             Pageable pageable) {
         var allProducts = productService.findAll();
 
-        // Apply search filters
         var searched = allProducts.stream()
                 .filter(p -> keyword == null || keyword.isEmpty() ||
                         p.name().toLowerCase().contains(keyword.toLowerCase()) ||
@@ -155,7 +135,7 @@ public class AdminProductController {
                         (p.sku() != null && p.sku().toLowerCase().contains(keyword.toLowerCase())))
                 .filter(p -> categoryIds == null || categoryIds.isEmpty()
                         || (p.categories() != null
-                                && p.categories().stream().anyMatch(c -> categoryIds.contains(c.id()))))
+                        && p.categories().stream().anyMatch(c -> categoryIds.contains(c.id()))))
                 .filter(p -> brandIds == null || brandIds.isEmpty() || brandIds.contains(p.brand().id()))
                 .filter(p -> minPrice == null || p.price().compareTo(minPrice) >= 0)
                 .filter(p -> maxPrice == null || p.price().compareTo(maxPrice) <= 0)
@@ -164,7 +144,6 @@ public class AdminProductController {
                 .filter(p -> isPublished == null || p.isPublished() == isPublished)
                 .toList();
 
-        // Create paginated response
         int pageNumber = pageable.getPageNumber();
         int pageSize = pageable.getPageSize();
         int start = pageNumber * pageSize;
@@ -181,15 +160,11 @@ public class AdminProductController {
                 end >= searched.size(),
                 pageContent.isEmpty());
 
-        ApiResponse<PageResponseDTO<ProductDTO>> response = ApiResponse.success(pageResponse,
-                "Product search completed successfully");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(pageResponse, "Product search completed successfully"));
     }
 
     /**
      * Get warehouse inventory overview.
-     *
-     * GET /api/v1/products/warehouse
      */
     @GetMapping("/warehouse")
     @ResponseStatus(HttpStatus.OK)
@@ -199,7 +174,6 @@ public class AdminProductController {
             @RequestParam(required = false) Boolean outOfStock,
             Pageable pageable) {
         try {
-            // Get inventory data from inventory-service
             PageResponseDTO<WarehouseProductDTO> inventoryPage;
 
             if (outOfStock != null && outOfStock) {
@@ -213,7 +187,6 @@ public class AdminProductController {
                 inventoryPage = convertInventoryToWarehouseProducts(response.getData());
             }
 
-            // Filter by SKU if provided
             if (sku != null && !sku.isEmpty()) {
                 var filtered = inventoryPage.content().stream()
                         .filter(p -> p.sku() != null && p.sku().toLowerCase().contains(sku.toLowerCase()))
@@ -233,7 +206,6 @@ public class AdminProductController {
 
             return ResponseEntity.ok(ApiResponse.success(inventoryPage, "Warehouse products retrieved successfully"));
         } catch (Exception e) {
-            // Fallback: return empty response if inventory-service is unavailable
             var emptyResponse = new PageResponseDTO<WarehouseProductDTO>(
                     List.of(),
                     pageable.getPageNumber(),
@@ -260,7 +232,6 @@ public class AdminProductController {
 
                     if (product.isPresent()) {
                         var p = product.get();
-                        // Null-safe calculation
                         long availableQty = (inventory.quantity() != null ? inventory.quantity() : 0) -
                                 (inventory.reservedQuantity() != null ? inventory.reservedQuantity() : 0);
                         return new WarehouseProductDTO(
@@ -295,8 +266,6 @@ public class AdminProductController {
 
     /**
      * Export products for external use.
-     *
-     * GET /api/v1/products/export
      */
     @GetMapping("/export")
     @ResponseStatus(HttpStatus.OK)
@@ -307,28 +276,22 @@ public class AdminProductController {
             @RequestParam(defaultValue = "csv") String format) {
         var allProducts = productService.findAll();
 
-        // Apply filters
         var filtered = allProducts.stream()
                 .filter(p -> ids == null || ids.isEmpty() || ids.contains(p.id()))
                 .filter(p -> categoryIds == null || categoryIds.isEmpty()
                         || (p.categories() != null
-                                && p.categories().stream().anyMatch(c -> categoryIds.contains(c.id()))))
+                        && p.categories().stream().anyMatch(c -> categoryIds.contains(c.id()))))
                 .filter(p -> brandIds == null || brandIds.isEmpty() || brandIds.contains(p.brand().id()))
                 .toList();
 
-        // Generate CSV export
         byte[] csvBytes = exportToCSV(filtered);
-
         return ResponseEntity.ok(ApiResponse.success(csvBytes, "Products exported successfully"));
     }
 
     private byte[] exportToCSV(List<ProductDTO> products) {
         StringBuilder csv = new StringBuilder();
-
-        // CSV Header
         csv.append("ID,Name,SKU,Price,Stock Quantity,Published,Featured,Brand ID,Cost\n");
 
-        // CSV Data
         for (ProductDTO product : products) {
             csv.append(product.id()).append(",");
             csv.append("\"").append(escapeCsvValue(product.name())).append("\",");
@@ -354,8 +317,6 @@ public class AdminProductController {
 
     /**
      * Create a new product.
-     *
-     * POST /api/v1/products
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -379,8 +340,6 @@ public class AdminProductController {
 
     /**
      * Get product by ID.
-     *
-     * GET /api/v1/products/{id}
      */
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
@@ -396,25 +355,19 @@ public class AdminProductController {
         }
     }
 
-
     /**
      * Get product by IDs.
-     *
-     * GET /api/v1/products
      */
     @GetMapping("/bulk")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<ProductSummaryDTO>>> getProductInformation(
-            @RequestParam("id") List<Long> productIds
-    ) {
+            @RequestParam("id") List<Long> productIds) {
         var products = productService.getProductSummariesByIds(productIds);
         return ResponseEntity.ok(ApiResponse.success(products, "Products retrieved successfully"));
     }
 
     /**
      * Update product by ID.
-     *
-     * PUT /api/v1/products/{id}
      */
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
@@ -438,8 +391,6 @@ public class AdminProductController {
 
     /**
      * Delete product by ID.
-     *
-     * DELETE /api/v1/products/{id}
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<String>> deleteProduct(@PathVariable Long id) {
@@ -460,8 +411,6 @@ public class AdminProductController {
 
     /**
      * Update product quantity.
-     *
-     * PUT /api/v1/products/{id}/quantity
      */
     @PutMapping("/{id}/quantity")
     @ResponseStatus(HttpStatus.OK)
@@ -482,8 +431,6 @@ public class AdminProductController {
 
     /**
      * Subtract product quantity (e.g., for order processing).
-     *
-     * POST /api/v1/products/{id}/quantity/subtract
      */
     @PostMapping("/{id}/quantity/subtract")
     @ResponseStatus(HttpStatus.OK)
@@ -495,15 +442,113 @@ public class AdminProductController {
     }
 
     // ================================
-    // PRODUCT ATTRIBUTES
+    // PRODUCT IMAGES
     // ================================
 
     /**
-     * Get all product attributes with optional pagination.
-     *
-     * GET /api/v1/products/attributes
-     * GET /api/v1/products/attributes?page=0&size=10
+     * Upload single image without product ID (general upload)
+     * POST /api/v1/products/upload-image
      */
+    @PostMapping("/upload-image")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<ApiResponse<ProductImageDTO>> uploadImage(
+            @RequestParam("file") MultipartFile file) {
+        log.info("Uploading image");
+        try {
+            var uploadedImage = productImageService.uploadImage(file);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.created(uploadedImage, "Image uploaded successfully"));
+        } catch (Exception e) {
+            log.error("Error uploading image: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(400, e.getMessage(), "/api/v1/products/upload-image"));
+        }
+    }
+
+    /**
+     * Upload single image for product
+     * POST /api/v1/products/{id}/images
+     */
+    @PostMapping("/{id}/images")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<ApiResponse<ProductImageDTO>> uploadProductImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+        log.info("Uploading image for product: {}", id);
+        try {
+            var uploadedImage = productImageService.uploadProductImage(id, file);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.created(uploadedImage, "Image uploaded successfully"));
+        } catch (Exception e) {
+            log.error("Error uploading image for product {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(400, e.getMessage(), "/api/v1/products/" + id + "/images"));
+        }
+    }
+
+    /**
+     * Upload multiple images for product
+     * POST /api/v1/products/{id}/images/bulk
+     */
+    @PostMapping("/{id}/images/bulk")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<ApiResponse<List<ProductImageDTO>>> uploadProductImages(
+            @PathVariable Long id,
+            @RequestParam("files") List<MultipartFile> files) {
+        log.info("Uploading {} images for product: {}", files.size(), id);
+        try {
+            var uploadedImages = productImageService.uploadProductImages(id, files);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.created(uploadedImages, "Images uploaded successfully"));
+        } catch (Exception e) {
+            log.error("Error uploading images for product {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(400, e.getMessage(), "/api/v1/products/" + id + "/images/bulk"));
+        }
+    }
+
+    /**
+     * Get all images for product
+     * GET /api/v1/products/{id}/images
+     */
+    @GetMapping("/{id}/images")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<ApiResponse<List<ProductImageDTO>>> getProductImages(@PathVariable Long id) {
+        log.info("Fetching images for product: {}", id);
+        try {
+            var images = productImageService.getProductImages(id);
+            return ResponseEntity.ok(ApiResponse.success(images, "Product images retrieved successfully"));
+        } catch (Exception e) {
+            log.error("Error fetching images for product {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(404, e.getMessage(), "/api/v1/products/" + id + "/images"));
+        }
+    }
+
+    /**
+     * Delete specific image
+     * DELETE /api/v1/products/{id}/images/{imageId}
+     */
+    @DeleteMapping("/{id}/images/{imageId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ResponseEntity<ApiResponse<Void>> deleteProductImage(
+            @PathVariable Long id,
+            @PathVariable Long imageId) {
+        log.info("Deleting image {} for product: {}", imageId, id);
+        try {
+            productImageService.deleteProductImage(id, imageId);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            log.error("Error deleting image {} for product {}: {}", imageId, id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(404, e.getMessage(), "/api/v1/products/" + id + "/images/" + imageId));
+        }
+    }
+
+    // ================================
+    // PRODUCT ATTRIBUTES
+    // ================================
+
     @GetMapping("/attributes")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<PageResponseDTO<ProductAttributeDTO>>> getAttributes(Pageable pageable) {
@@ -511,11 +556,6 @@ public class AdminProductController {
         return ResponseEntity.ok(ApiResponse.success(result, "Product attributes retrieved successfully"));
     }
 
-    /**
-     * Get product attribute by ID.
-     *
-     * GET /api/v1/products/attributes/{id}
-     */
     @GetMapping("/attributes/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductAttributeDTO>> getAttributeById(@PathVariable Long id) {
@@ -523,11 +563,6 @@ public class AdminProductController {
         return ResponseEntity.ok(ApiResponse.success(result, "Product attribute retrieved successfully"));
     }
 
-    /**
-     * Create a new product attribute.
-     *
-     * POST /api/v1/products/attributes
-     */
     @PostMapping("/attributes")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ApiResponse<ProductAttributeDTO>> createAttribute(
@@ -537,11 +572,6 @@ public class AdminProductController {
                 .body(ApiResponse.created(result, "Product attribute created successfully"));
     }
 
-    /**
-     * Update product attribute by ID.
-     *
-     * PUT /api/v1/products/attributes/{id}
-     */
     @PutMapping("/attributes/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductAttributeDTO>> updateAttribute(
@@ -551,11 +581,6 @@ public class AdminProductController {
         return ResponseEntity.ok(ApiResponse.success(result, "Product attribute updated successfully"));
     }
 
-    /**
-     * Delete product attribute by ID.
-     *
-     * DELETE /api/v1/products/attributes/{id}
-     */
     @DeleteMapping("/attributes/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<ApiResponse<Void>> deleteAttribute(@PathVariable Long id) {
@@ -563,11 +588,6 @@ public class AdminProductController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Get product attribute values by attribute ID.
-     *
-     * GET /api/v1/products/attribute-values?attributeId=1
-     */
     @GetMapping("/attribute-values")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<ProductAttributeValueDTO>>> getAttributeValues(
@@ -580,12 +600,6 @@ public class AdminProductController {
     // PRODUCT ATTRIBUTE GROUPS
     // ================================
 
-    /**
-     * Get all product attribute groups with optional pagination.
-     *
-     * GET /api/v1/products/attribute-groups
-     * GET /api/v1/products/attribute-groups?page=0&size=10
-     */
     @GetMapping("/attribute-groups")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<PageResponseDTO<ProductAttributeGroupDTO>>> getAttributeGroups(
@@ -594,11 +608,6 @@ public class AdminProductController {
         return ResponseEntity.ok(ApiResponse.success(result, "Product attribute groups retrieved successfully"));
     }
 
-    /**
-     * Get product attribute group by ID.
-     *
-     * GET /api/v1/products/attribute-groups/{id}
-     */
     @GetMapping("/attribute-groups/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductAttributeGroupDTO>> getAttributeGroupById(@PathVariable Long id) {
@@ -606,11 +615,6 @@ public class AdminProductController {
         return ResponseEntity.ok(ApiResponse.success(result, "Product attribute group retrieved successfully"));
     }
 
-    /**
-     * Create a new product attribute group.
-     *
-     * POST /api/v1/products/attribute-groups
-     */
     @PostMapping("/attribute-groups")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ApiResponse<ProductAttributeGroupDTO>> createAttributeGroup(
@@ -620,11 +624,6 @@ public class AdminProductController {
                 .body(ApiResponse.created(result, "Product attribute group created successfully"));
     }
 
-    /**
-     * Update product attribute group by ID.
-     *
-     * PUT /api/v1/products/attribute-groups/{id}
-     */
     @PutMapping("/attribute-groups/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductAttributeGroupDTO>> updateAttributeGroup(
@@ -634,11 +633,6 @@ public class AdminProductController {
         return ResponseEntity.ok(ApiResponse.success(result, "Product attribute group updated successfully"));
     }
 
-    /**
-     * Delete product attribute group by ID.
-     *
-     * DELETE /api/v1/products/attribute-groups/{id}
-     */
     @DeleteMapping("/attribute-groups/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<ApiResponse<Void>> deleteAttributeGroup(@PathVariable Long id) {
@@ -650,12 +644,6 @@ public class AdminProductController {
     // PRODUCT OPTIONS
     // ================================
 
-    /**
-     * Get all product options with optional pagination.
-     *
-     * GET /api/v1/products/options
-     * GET /api/v1/products/options?page=0&size=10
-     */
     @GetMapping("/options")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<PageResponseDTO<ProductOptionDTO>>> getOptions(Pageable pageable) {
@@ -663,11 +651,6 @@ public class AdminProductController {
         return ResponseEntity.ok(ApiResponse.success(options, "Product options retrieved successfully"));
     }
 
-    /**
-     * Get product option by ID.
-     *
-     * GET /api/v1/products/options/{id}
-     */
     @GetMapping("/options/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductOptionDTO>> getOptionById(@PathVariable Long id) {
@@ -675,11 +658,6 @@ public class AdminProductController {
         return ResponseEntity.ok(ApiResponse.success(option, "Product option retrieved successfully"));
     }
 
-    /**
-     * Create a new product option.
-     *
-     * POST /api/v1/products/options
-     */
     @PostMapping("/options")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ApiResponse<ProductOptionDTO>> createOption(
@@ -689,11 +667,6 @@ public class AdminProductController {
                 .body(ApiResponse.created(created, "Product option created successfully"));
     }
 
-    /**
-     * Update product option by ID.
-     *
-     * PUT /api/v1/products/options/{id}
-     */
     @PutMapping("/options/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<ProductOptionDTO>> updateOption(
@@ -703,11 +676,6 @@ public class AdminProductController {
         return ResponseEntity.ok(ApiResponse.success(updated, "Product option updated successfully"));
     }
 
-    /**
-     * Delete product option by ID.
-     *
-     * DELETE /api/v1/products/options/{id}
-     */
     @DeleteMapping("/options/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<ApiResponse<Void>> deleteOption(@PathVariable Long id) {
@@ -719,11 +687,6 @@ public class AdminProductController {
     // PRODUCT OPTION VALUES
     // ================================
 
-    /**
-     * Get all product option values.
-     *
-     * GET /api/v1/products/option-values
-     */
     @GetMapping("/option-values")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<ApiResponse<List<ProductOptionValueDTO>>> getOptionValues(

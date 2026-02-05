@@ -41,6 +41,7 @@ public class OrderItem {
 
     @Size(max = 100)
     @Column(name = "sku", length = 100)
+    @Transient
     private String sku;
 
     @Column(name = "quantity")

@@ -1,6 +1,5 @@
 package com.shopping.microservices.product_service.service.impl;
 
-import com.shopping.microservices.product_service.dto.ProductImageCreationDTO;
 import com.shopping.microservices.product_service.dto.ProductImageDTO;
 import com.shopping.microservices.product_service.entity.Product;
 import com.shopping.microservices.product_service.entity.ProductImage;
@@ -20,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +36,51 @@ public class ProductImageServiceImpl implements ProductImageService {
     private final ProductRepository productRepository;
     private final ProductImageMapper productImageMapper;
     private final ImageUploadValidator imageUploadValidator;
+
+    /**
+     * ✅ NEW METHOD: Upload image without product association
+     * Used in Add Product page where product doesn't exist yet
+     */
+    @Override
+    public ProductImageDTO uploadImage(MultipartFile file) throws IOException {
+        log.info("Uploading image without product association");
+
+        // Validate file
+        imageUploadValidator.validateImageFile(file);
+
+        try {
+            // Upload to Cloudinary (temporary folder)
+            String folderName = "products/temp";
+            Map uploadResult = cloudinaryService.uploadFile(file, folderName);
+
+            // Extract Cloudinary metadata
+            String publicId = (String) uploadResult.get("public_id");
+            String secureUrl = (String) uploadResult.get("secure_url");
+
+            log.info("File uploaded successfully. Public ID: {}, URL: {}", publicId, secureUrl);
+
+            // Return DTO without saving to database (no product yet)
+            // Using record constructor or builder pattern
+            return new ProductImageDTO(
+                    null,  // id - not saved yet
+                    null,  // productId - not associated yet
+                    secureUrl,  // imageUrl
+                    publicId,   // cloudinaryPublicId
+                    file.getOriginalFilename(),  // altText
+                    false,  // isPrimary
+                    0,  // displayOrder
+                    LocalDateTime.now(),  // createdAt
+                    LocalDateTime.now()   // updatedAt
+            );
+
+        } catch (IOException ex) {
+            log.error("Failed to upload temporary image", ex);
+            throw new ImageUploadException(
+                    ErrorCode.IMAGE_UPLOAD_FAILED,
+                    "Failed to upload image: " + ex.getMessage()
+            );
+        }
+    }
 
     @Override
     public ProductImageDTO uploadProductImage(Long productId, MultipartFile file) throws IOException {

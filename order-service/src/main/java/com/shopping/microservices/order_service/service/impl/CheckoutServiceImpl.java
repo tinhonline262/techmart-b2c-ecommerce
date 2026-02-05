@@ -208,7 +208,9 @@ public class CheckoutServiceImpl implements CheckoutService {
                 oldStatus,
                 checkoutStatusPutVm.status()
         );
-        
+
+
+
         // Find associated order
         return orderRepository.findByCheckoutId(checkout.getId())
                 .map(order -> order.getId())

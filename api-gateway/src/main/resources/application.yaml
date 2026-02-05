@@ -67,14 +67,49 @@ spring:
             - Path=/api/v1/public/products/**
 
         - id: location-service-public
-          uri: lb://location-service
+          uri: lb://LOCATION-SERVICE  # Sửa thành LOCATION-SERVICE
           predicates:
             - Path=/api/v1/public/addresses/**
 
+        - id: location-service-public-countries
+          uri: lb://LOCATION-SERVICE  # Sửa thành LOCATION-SERVICE
+          predicates:
+            - Path=/api/v1/public/countries/**
+
+        - id: location-service-public-states
+          uri: lb://LOCATION-SERVICE  # Sửa thành LOCATION-SERVICE
+          predicates:
+            - Path=/api/v1/public/state-or-provinces/**
+
+        - id: location-service-public-districts
+          uri: lb://LOCATION-SERVICE  # Sửa thành LOCATION-SERVICE
+          predicates:
+            - Path=/api/v1/public/districts/**
+
         - id: location-service-admin
-          uri: lb://location-service
+          uri: lb://LOCATION-SERVICE  # Sửa thành LOCATION-SERVICE
           predicates:
             - Path=/api/v1/countries/**,/api/v1/states/**,/api/v1/districts/**
+
+        - id: cart-service
+          uri: lb://CART-SERVICE
+          predicates:
+            - Path=/api/v1/public/carts/**
+          filters:
+            - AuthenticationFilter
+        - id: checkout-service  # THÊM ROUTE NÀY
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/v1/public/checkouts/**
+          filters:
+            - AuthenticationFilter
+
+        - id: order-service-public
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/v1/public/orders/**
+          filters:
+            - AuthenticationFilter
 
 # Actuator Configuration (for Prometheus)
 management:
