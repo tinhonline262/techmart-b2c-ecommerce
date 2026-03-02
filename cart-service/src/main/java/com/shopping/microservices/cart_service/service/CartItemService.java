@@ -2,6 +2,7 @@ package com.shopping.microservices.cart_service.service;
 
 import com.shopping.microservices.cart_service.dto.CartItemRequestDto;
 import com.shopping.microservices.cart_service.dto.CartItemResponseDto;
+import com.shopping.microservices.cart_service.dto.EnrichedCartItemResponseDto;
 
 import java.util.List;
 
@@ -31,12 +32,12 @@ public interface CartItemService {
     CartItemResponseDto updateCartItemQuantity(String customerId, Long productId, CartItemRequestDto request);
 
     /**
-     * Get all cart items for a customer
+     * Get all cart items for a customer with enriched product information
      *
      * @param customerId customer ID
-     * @return list of cart item response DTOs
+     * @return list of enriched cart item response DTOs with product details
      */
-    List<CartItemResponseDto> getCartItemsByCustomerId(String customerId);
+    List<EnrichedCartItemResponseDto> getEnrichedCartItemsByCustomerId(String customerId);
 
     /**
      * Remove a specific cart item

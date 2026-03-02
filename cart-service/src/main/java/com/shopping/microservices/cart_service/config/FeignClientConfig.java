@@ -1,7 +1,6 @@
-package com.shopping.microservices.order_service.config;
+package com.shopping.microservices.cart_service.config;
 
 import feign.RequestInterceptor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

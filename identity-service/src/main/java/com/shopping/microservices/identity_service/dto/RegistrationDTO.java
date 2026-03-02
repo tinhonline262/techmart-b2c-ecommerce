@@ -12,7 +12,10 @@ public class RegistrationDTO {
     private String username;
 
     @NotEmpty(message = "Password can not be null or empty")
-    @Pattern(regexp = "^[a-z0-9]+[a-z0-9_]{3,15}$", message = "Password is not valid")
+    @Pattern(
+            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,20}$",
+            message = "Password must contain at least 8 characters, including uppercase, lowercase, number and special character"
+    )
     private String password;
 
     @NotEmpty(message = "Name of user can not be null or empty")

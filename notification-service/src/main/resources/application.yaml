@@ -6,10 +6,10 @@ spring:
 
   # Email Configuration
   mail:
-    host: smtp.mailersend.net
+    host: send.smtp.dev
     port: 587
-    username: MS_IXj7AU@test-r83ql3pokrxgzw1j.mlsender.net
-    password: ${MAILTRAP_API_KEY:mssp.WToSDWs.pr9084z5z8e4w63d.uaNRDiY}
+    username: shawnee@techmart.com
+    password: Tinhhuynh262@
     properties:
       mail:
         smtp:
@@ -46,4 +46,4 @@ eureka:
       defaultZone: http://localhost:8761/eureka
 mail:
   sender:
-    from: MS_IXj7AU@test-r83ql3pokrxgzw1j.mlsender.net
+    from: shawnee@techmart.com

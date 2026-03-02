@@ -15,12 +15,9 @@ public class CustomCacheConfig {
 
     public static final String CACHE_ACCESS_TOKEN_BLACKLIST = "accessTokenBlacklist";
     public static final String CACHE_REFRESH_TOKEN_BLACKLIST = "refreshTokenBlacklist";
-    public static final String CACHE_ARTICLE_DETAIL = "articleDetail";
 
     @Bean
     public CacheManager cacheManager() {
-        CaffeineCache tokenCache = new CaffeineCache(CACHE_ARTICLE_DETAIL,
-                Caffeine.newBuilder().expireAfterWrite(5, TimeUnit.MINUTES).build());
 
         CaffeineCache accessTokenCache = new CaffeineCache(CACHE_ACCESS_TOKEN_BLACKLIST,
                 Caffeine.newBuilder().expireAfterWrite(15, TimeUnit.MINUTES).build());
@@ -30,7 +27,7 @@ public class CustomCacheConfig {
 
         SimpleCacheManager manager = new SimpleCacheManager();
         manager.setCaches(List.of(
-                tokenCache, accessTokenCache, refreshTokenCache
+               accessTokenCache, refreshTokenCache
         ));
         return manager;
     }

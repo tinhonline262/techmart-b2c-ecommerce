@@ -2,6 +2,8 @@ package com.shopping.microservices.cart_service.service.impl;
 
 import com.shopping.microservices.cart_service.dto.CartItemRequestDto;
 import com.shopping.microservices.cart_service.dto.CartItemResponseDto;
+import com.shopping.microservices.cart_service.dto.EnrichedCartItemResponseDto;
+import com.shopping.microservices.cart_service.dto.ProductDTO;
 import com.shopping.microservices.cart_service.entity.CartItem;
 import com.shopping.microservices.cart_service.entity.CartItemId;
 import com.shopping.microservices.cart_service.exception.CartItemNotFoundException;
@@ -9,6 +11,7 @@ import com.shopping.microservices.cart_service.exception.InvalidQuantityExceptio
 import com.shopping.microservices.cart_service.mapper.CartItemMapper;
 import com.shopping.microservices.cart_service.repository.CartItemRepository;
 import com.shopping.microservices.cart_service.service.CartItemService;
+import com.shopping.microservices.cart_service.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -18,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -29,6 +33,7 @@ import java.util.Optional;
 public class CartItemServiceImpl implements CartItemService {
 
     private final CartItemRepository cartItemRepository;
+    private final ProductService productService;
 
     @Override
     @Transactional
@@ -87,13 +92,37 @@ public class CartItemServiceImpl implements CartItemService {
 
     @Override
     @Cacheable(value = "customerCart", key = "#customerId")
-    public List<CartItemResponseDto> getCartItemsByCustomerId(String customerId) {
-        log.debug("Retrieving cart items for customer: {}", customerId);
+    public List<EnrichedCartItemResponseDto> getEnrichedCartItemsByCustomerId(String customerId) {
+        log.debug("Retrieving enriched cart items for customer: {}", customerId);
 
         List<CartItem> cartItems = cartItemRepository.findByIdCustomerId(customerId);
-        log.info("Retrieved {} cart items for customer: {}", cartItems.size(), customerId);
+        
+        if (cartItems.isEmpty()) {
+            log.info("No cart items found for customer: {}", customerId);
+            return List.of();
+        }
 
-        return CartItemMapper.toDtoList(cartItems);
+        List<CartItemResponseDto> cartItemDtos = CartItemMapper.toDtoList(cartItems);
+        
+        // Fetch all product IDs from cart items
+        List<Long> productIds = cartItemDtos.stream()
+                .map(CartItemResponseDto::getProductId)
+                .toList();
+
+        // Bulk fetch product details
+        Map<Long, ProductDTO> productMap = productService.getProductsByIds(productIds);
+        log.debug("Fetched {} product details for {} cart items", productMap.size(), cartItemDtos.size());
+
+        // Enrich cart items with product data
+        List<EnrichedCartItemResponseDto> enrichedItems = cartItemDtos.stream()
+                .map(cartItem -> {
+                    ProductDTO product = productMap.get(cartItem.getProductId());
+                    return EnrichedCartItemResponseDto.fromCartAndProduct(cartItem, product);
+                })
+                .toList();
+
+        log.info("Retrieved {} enriched cart items for customer: {}", enrichedItems.size(), customerId);
+        return enrichedItems;
     }
 
     @Override

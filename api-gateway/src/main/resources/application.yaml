@@ -24,6 +24,11 @@ spring:
           filters:
             - AuthenticationFilter
 
+        - id: order-service-public
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/v1/public/orders/**, /api/v1/public/checkouts/**
+
         - id: notification-service
           uri: lb://NOTIFICATION-SERVICE
           predicates:
@@ -75,6 +80,11 @@ spring:
           uri: lb://location-service
           predicates:
             - Path=/api/v1/countries/**,/api/v1/states/**,/api/v1/districts/**
+
+        - id: cart-service-public
+          uri: lb://cart-service
+          predicates:
+            - Path=/api/v1/public/carts/**
 
 # Actuator Configuration (for Prometheus)
 management:

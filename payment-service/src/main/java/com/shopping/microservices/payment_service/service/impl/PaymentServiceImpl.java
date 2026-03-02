@@ -94,12 +94,10 @@ public class PaymentServiceImpl implements PaymentService {
     public InitiatedPayment initiatePayment(Long orderId) {
         log.info("Initiating payment with orderId: {}", orderId);
 
-        // Load payment with pessimistic lock to prevent concurrent initiation
         Payment payment = paymentRepository.findByOrderIdWithLock(orderId)
             .orElseThrow(() -> new PaymentException(orderId,
                 "Payment not found for order: " + orderId));
 
-        // Validate payment status
         if (!payment.isPending()) {
             throw new PaymentException(payment.getId(),
                 "Payment is not in pending status: " + payment.getPaymentStatus());

@@ -14,11 +14,9 @@ import java.util.stream.Collectors;
 @Component
 public class CheckoutMapper {
 
-    // ==================== Checkout Entity <-> DTO ====================
-
     /**
      * Converts CreateCheckoutRequest to Checkout entity.
-     * Sets initial status and progress values.
+     * Initializes status and progress to default values.
      */
     public Checkout toEntity(CreateCheckoutRequest request) {
         if (request == null) {
