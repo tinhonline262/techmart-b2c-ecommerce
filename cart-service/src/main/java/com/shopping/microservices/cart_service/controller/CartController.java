@@ -3,6 +3,7 @@ package com.shopping.microservices.cart_service.controller;
 import com.shopping.microservices.cart_service.dto.ApiResponse;
 import com.shopping.microservices.cart_service.dto.CartItemRequestDto;
 import com.shopping.microservices.cart_service.dto.CartItemResponseDto;
+import com.shopping.microservices.cart_service.dto.EnrichedCartItemResponseDto;
 import com.shopping.microservices.cart_service.service.CartItemService;
 import com.shopping.microservices.cart_service.util.SecurityUtils;
 import jakarta.validation.Valid;
@@ -58,10 +59,10 @@ public class CartController {
      * Get all cart items for authenticated customer
      */
     @GetMapping("/items")
-    public ResponseEntity<ApiResponse<List<CartItemResponseDto>>> getCartItems() {
+    public ResponseEntity<ApiResponse<List<EnrichedCartItemResponseDto>>> getCartItems() {
         
         String customerId = SecurityUtils.getCurrentCustomerId();
-        List<CartItemResponseDto> items = cartItemService.getCartItemsByCustomerId(customerId);
+        List<EnrichedCartItemResponseDto> items = cartItemService.getEnrichedCartItemsByCustomerId(customerId);
         
         return ResponseEntity.ok(
                 ApiResponse.success(HttpStatus.OK.value(), "Cart items retrieved successfully", items)

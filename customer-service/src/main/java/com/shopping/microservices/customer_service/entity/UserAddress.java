@@ -35,11 +35,6 @@ public class UserAddress {
     @Column(name = "is_active")
     private Boolean isActive;
 
-    // ✅ FIELD BỊ THIẾU GÂY LỖI
-    @ColumnDefault("false")
-    @Column(name = "is_default")
-    private Boolean isDefault;
-
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;

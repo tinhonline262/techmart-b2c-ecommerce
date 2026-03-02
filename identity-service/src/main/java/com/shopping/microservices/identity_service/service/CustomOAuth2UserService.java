@@ -24,7 +24,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     private final OAuth2UserService<OAuth2UserRequest, OAuth2User> delegate = new DefaultOAuth2UserService();
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final RoleService roleService;
 
     @Override
